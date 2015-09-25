@@ -1,0 +1,273 @@
+#!/usr/bin/env python2
+# -*- python -*-
+#
+# The _open_SmashBox Project.
+#
+# Author: Jakub T. Moscicki, CERN, 2013
+# License: AGPL
+#
+#$Id: $
+#
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Perform internal setup of the environment.
+# This is a Copy/Paste logic which must stay in THIS file
+def standardSetup():
+   import sys, os.path
+   # insert the path to cernafs based on the relative position of this scrip inside the service directory tree
+   exeDir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
+   pythonDir = os.path.join(os.path.dirname(exeDir), 'python' )
+   sys.path.insert(0, pythonDir)
+   import smashbox.setup
+   smashbox.setup.standardSetup(sys.argv[0]) # execute a setup hook
+
+standardSetup()
+del standardSetup
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+global_exitcode_error = False
+
+def main():
+   import os, os.path, sys
+   import glob
+   import datetime
+   import smashbox.script
+   import smashbox.no_engine
+   
+   parser=smashbox.script.arg_parser(description='Run the tests and smash the box')
+
+   parser.add_argument('tests', metavar='test', type=str, nargs='*',
+                      help='single test (file) or test collection (directory)')
+
+   parser.add_argument('--keep-state', dest="keep_state",action="store_true", help='incremental test on top of existing files: keep current state of the account both locally and on the server')
+   parser.add_argument('--keep-going',dest="keep_going",action="store_true",default=False,help='do not abort the execution on the first failed testcase')
+   parser.add_argument('--all-testsets', '-a', dest="all_testsets", action="store_true", help='run all testsets defined within each test script file')
+   parser.add_argument('--testset', '-t', dest="testset", action="store", default=None, type=int, help='run just one testset specified by index, starting from 0')
+   parser.add_argument('--loop', '-l', dest="loop", action="store", default=1, type=int, help='number of times a test command should be executed')
+   parser.add_argument('--keep-results', dest="keep_results", action="store_true", help='append the result file with new results')
+   parser.add_argument('--check-connection', dest="check_connection", action="store_true", help='used only to check the configuration')
+   args = parser.parse_args()
+
+   config = smashbox.script.configure(args.options,args.configs)
+
+   import logging
+   logging.addLevelName(35,"SUMMARY")
+   logging.SUMMARY = 35
+   
+   # in the --quiet mode we do not log INFO
+   # use log_quiet() to log in the --quiet mode
+   def log_quiet(fmt,*args, **kwds):
+       logger.log(logging.SUMMARY,fmt,*args,**kwds)
+   
+   level = logging.WARNING # log warnings, errors and quiet messages
+
+   if args.quiet:
+       level = logging.ERROR
+   elif args.verbose:
+       level = logging.INFO
+   elif args.debug:
+       level = logging.DEBUG
+
+   logger = smashbox.script.getLogger()
+   logger.setLevel(level)
+
+   # we will pass the loglevel to worker processes in the config
+   # object (we use leading underscore for such internal stuff)
+   config._loglevel = level
+   
+   # check for mandatory configuration 
+   if not hasattr(config,'oc_account_password') or not config.oc_account_password:
+      logger.error("The oc_account_password not set in smashbox.conf")
+      sys.exit(1)
+            
+   test_mode = "single"
+   tests = []
+
+   for t in args.tests:
+      if not os.path.exists(t):
+         logger.critical("Test target does not exist: %s (%s)",repr(t),os.path.abspath(t))
+         sys.exit(1)
+
+      if os.path.isdir(t):
+         test_mode = "collection"
+         for fn in glob.glob(os.path.join(t,'test_*.py')):
+            logger.info("Test target: %s",fn)
+            tests.append(fn)            
+      else:
+         #t = os.path.abspath(t)
+         tests.append(t)
+
+   logger.info("Test mode: %s",test_mode)
+
+   ############
+   # handle specific config options
+
+   if args.keep_state:
+      config.oc_account_reset_procedure = 'keep'
+      config.rundir_reset_procedure = 'keep'
+
+   if not config.runid:
+      config.runid = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
+
+   config.smashdir = os.path.expanduser(config.smashdir)
+
+   # note: specifying "localhost" may give you SSL problems
+   # (authentication error reported by ocsync) so we get the real
+   # hostname here
+   if config.oc_server.strip() in ['localhost', '']:
+       import socket
+       config.oc_server = socket.gethostname()
+
+   top_smash = os.path.abspath(os.path.normpath(os.path.dirname(os.path.dirname(sys.argv[0]))))
+
+   # relative paths are resolved wrt to <top_smash>
+   # absolute paths are left as-is
+   #config.oc_server_tools_path = os.path.join(top_smash,config.oc_server_tools_path)
+   config.oc_sync_cmd = os.path.join(top_smash,config.oc_sync_cmd)
+
+   import string
+
+   #try:
+   #   config.oc_server_shell_cmd = string.Template(config.oc_server_shell_cmd).substitute({'oc_server':config.oc_server})
+   #except ValueError,x:
+   #   logger.critical('Malformed options oc_server_shell_cmd: %s %s'%(repr(config.oc_server_shell_cmd),repr(x)))
+   #   sys.exit(1)
+
+
+   try:
+      config.oc_server_folder = string.Template(config.oc_server_folder).substitute({'runid':config.runid})
+   except ValueError,x:
+      logger.critical('Malformed options oc_server_folder: %s %s'%(repr(config.oc_server_folder),repr(x)))
+      sys.exit(1)
+
+   #
+   ###########
+   
+   if args.dry_run:
+      log_quiet('*** DRY RUN ***')
+      smashbox.script.config_log(logging.INFO)
+
+   if not tests:
+      logger.warning("No tests specified to run...")
+      sys.exit(1)
+
+   def run_multiprocessing_engine(config,t):
+       global global_exitcode_error
+       import subprocess, pickle
+       cmd = ['python2',os.path.join(os.path.dirname(os.path.dirname(__file__)),'python/smashbox/multiprocessing_engine.py'), t, pickle.dumps(config)]
+       p = subprocess.Popen(cmd)
+       p.communicate()
+       
+       assert(p.returncode is not None)
+
+       if p.returncode != 0:
+          if args.keep_going:
+             logger.error('Non-zero exit code (%s)'%p.returncode)
+             global_exitcode_error = True
+          else:
+             logger.fatal('Aborting run -- non-zero exit code (%d)'%p.returncode)
+             sys.exit(p.returncode)
+          
+
+   from smashbox.utilities import  oc_webdav_url,check_url, time_now, delete_smashdir_tests
+
+   log_quiet('runid: %s',config.runid) # log_quiet
+   log_quiet('URL: --curl_opts %s --user %s --password %s, %s'%oc_webdav_url(hide_password=True))  # log_quiet
+   user_defined_oc_account_name = config.oc_account_name
+   
+   #check if oc_root is correct, and try to correct it using redirect response
+   check_url_result = check_url()
+   if args.check_connection:
+        log_quiet('URL Check: %s',check_url_result) # log_quiet
+        sys.exit(1)  
+   #temporary delete_smashdir_tests() function to keep the directories clear
+   if (True):
+       delete_smashdir_tests()
+   
+   if not args.keep_results:
+       file_path='test_results.json'
+       if(os.path.exists(file_path)):
+           os.remove(file_path)
+            
+   	      
+   for t in tests:
+
+      workdir = None
+
+      def barename(t):
+         return os.path.splitext(os.path.basename(t))[0]
+      
+      if test_mode == "single":
+         pass
+
+      def set_rundir_name(test_name, runid, loop=None, test_set=None):
+         config.rundir = os.path.join(config.smashdir, barename(test_name))
+         if config.workdir_runid_enabled:
+            config.rundir += '-' + str(runid)
+            if loop != None and args.loop > 1:
+               config.rundir += '-loop' + str(loop)
+            if test_set != None:
+               config.rundir += '-testset' + str(test_set)
+
+      set_rundir_name(t, config.runid)
+
+      if not user_defined_oc_account_name:
+         config.oc_account_name = barename(t)
+
+      if config.oc_account_runid_enabled:
+         config.oc_account_name += '-'+str(config.runid)
+        
+      
+
+      def run_test(ts,i=0):
+         from smashbox.utilities import append_to_json_file
+         if ts:
+            for opt,val in zip(ts.keys(),ts.values()):
+               setattr(config,opt,val)
+
+         log_quiet('running %s in %s as %s testset #%d %s',t,config.rundir,config.oc_account_name,i,repr(ts)) # log_quiet
+         #add scenario to json
+         dict = { "scenario": ts,
+                 "results": {},
+                 "time": str(time_now())
+         }
+         append_to_json_file(dict,str(os.path.abspath(t)))  
+         
+         if not args.dry_run:
+             #run the test
+            run_multiprocessing_engine(config,os.path.abspath(t))
+
+      for j in range(1,args.loop+1):
+         log_quiet ("Running iteration %d" % j)
+         if args.all_testsets or args.testset is not None:
+            smashbox.no_engine.testsets=[None]
+            execfile(os.path.abspath(t),smashbox.no_engine.__dict__)
+
+            if args.all_testsets:
+               for i,ts in enumerate(smashbox.no_engine.testsets):
+                  set_rundir_name(t, config.runid, j, i)
+                  run_test(ts,i)
+            else:
+               set_rundir_name(t, config.runid, j)
+               run_test(smashbox.no_engine.testsets[args.testset],args.testset)
+         else:
+            set_rundir_name(t, config.runid, j)
+            run_test(None)
+
+            
+   log_quiet ("THE END")
+   if args.dry_run:
+      log_quiet('*** DRY RUN ***')
+
+   if global_exitcode_error:
+      sys.exit(global_exitcode_error)
+   
+if __name__ == '__main__':
+   main()
+
+
+
+
+
+
+
+

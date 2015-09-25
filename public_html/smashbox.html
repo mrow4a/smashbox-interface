@@ -1,0 +1,31 @@
+<div class="content_section_text">
+	<p>Configuration file found! Click on configuration file section to see the details.</p></br>
+	<span><b>Smashbox Status: </b></span> 
+	<span id="smashbox_status">loading..</span> </br></br>
+	<div onclick="conf_status_details_fun()">
+		<span><b>Configuration validity: </b></span> 
+		<span id="smashbox_conf_status">connecting to server..</span> </br>
+		<span style="display: none;" id="smashbox_conf_status_details"></span> </br>
+		
+	</div>
+	<input type="button" value = " Get status " onclick="init()" ></input>
+	<input type="button" id="prepare_test_button" value = " Prepare test " onclick="smashbox_prepare_test()" style="display: inline;" disabled></input></br></br>
+</div>
+<div class="section_header section_header_grey" id="conf_details_header_div" onclick="conf_details_fun()">
+	<span style="display: inline;">Configuration file details </span><img src="lib/dropdown.png" alt="Show configuration details" id="conf_details_header_img" style="height: 10px;">
+</div>
+<div class="content_section_text" >
+	<div id="conf_details_div" style="display: none;">
+		<span id="conf_details">..loading</span></br>
+		<input type="button" id="hide_sensitive_button" value = " Show sensitive " onclick="hide_sensitive()" style="display: inline;"></input> 
+		<input type="button" id="edit_conf_button" value = " Edit configuration " onclick="" style="display: inline;"></input> </br></br>
+	</div>
+</div>
+
+<div class="section_header section_header_grey">
+	<span style="display: inline;">Test details </span>
+</div>
+<div class="content_section_text" >
+	<div id="test_details_div" class="test_progress_table"></div>
+	<div id="test_progress_details_div"></div>
+</div>
