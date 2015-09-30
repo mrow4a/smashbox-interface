@@ -40,12 +40,14 @@
 				case "get_conf_status":
 				case "get_progress":
 				case "get_tests_list":
-				case "stop_test":
+				case "get_tests_list":
+				case "delete_conf":
 					$smash_msg = smash("?function=".$_GET['function']);
 					echo $smash_msg;
 					break;
 				case "set_conf":
-					smash("?function=".$_GET['function']."&config=".$_GET['test']);
+					$smash_msg = smash("?function=".$_GET['function']."&config=".$_GET['test']);
+					echo $smash_msg;
 					break;
 				case "run":
 					smash("?function=".$_GET['function']."&test=".$_GET['test']);

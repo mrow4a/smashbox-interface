@@ -1,6 +1,6 @@
 <?php
 	session_start();
-	$dir = realpath('/var/www/smashbox/cgi-bin/smashbox/etc/smashbox.confr');
+	$dir = realpath('/var/www/smashbox/cgi-bin/smashbox/etc/smashbox.conf');
 	if (file_exists($dir)) {
 		$_SESSION['Login']=1;         
 	}

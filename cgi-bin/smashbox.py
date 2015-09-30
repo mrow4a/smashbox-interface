@@ -46,13 +46,27 @@ def get_conf(hide_sensitive):
 	cf = "/var/www/smashbox/cgi-bin/smashbox/etc/smashbox.conf"
 	execfile(cf,{},config.__dict__)
 	print "Content-type:text/plain\r\n\r\n"
-	print ("hide_sensitive: %s" % str(hide_sensitive)) + "</br>"
+	#print ("hide_sensitive: %s" % str(hide_sensitive)) + "</br>"
 	for d in dir(config):
-		if not d.startswith("_") and d != "get":
+		if not d.startswith("_") and d != "get" and d != "oc_webdav_endpoint" and d != "oc_server_datadirectory":
+			print "<label for="+str(d)+">"+str(d)+": </label>"
 			if(hide_sensitive == "True" and (d == "oc_account_password" or d == "oc_admin_password" or d == "oc_server_shell_cmd")):
-				print "<b>" + str(d) + "</b> = *** </br>"
+				type = 'password'
 			else:
-				print "<b>" + str(d) + "</b> = " +str(getattr(config,d))+"</br>"
+				type = 'text'
+			#print "<b>" + str(d) + "</b> = " +str(getattr(config,d))+"</br>"
+			if (d=='oc_server_folder' or d=='smashdir' or d=='oc_sync_cmd' or d=='oc_server_tools_path' or d=='web_user' or d=='rundir_reset_procedure'):
+				print '<input type="url" name="oc_config" id="'+str(d)+'" size="35" value="'+str(getattr(config,d))+'" style="font-size: 10px;" />'
+			elif (d=='oc_ssl_enabled' or d=='workdir_runid_enabled' or d=='oc_account_runid_enabled'):
+				if(str(getattr(config,d))=="True"):
+					checked = "checked"
+				else:
+					checked = ""	
+				print '<input type="checkbox" name="oc_config" id="'+str(d)+'" value="'+str(getattr(config,d))+'" onchange=check_checkbox(this.id) '+checked+'/>'
+			else:
+				print '<input type="'+type+'" name="oc_config" id="'+str(d)+'" size="35" value="'+str(getattr(config,d))+'" style="font-size: 10px;" onfocus=conf_form_focus(this.id,"'+str(getattr(config,d))+'") onblur=conf_form_blur(this.id,"' +str(getattr(config,d))+'") />'
+				  
+			print '</br>'
 
 def get_conf_status():
 	print "Content-type:text/plain\r\n\r\n"
@@ -181,18 +195,28 @@ def get_progress():
 			response("omitting-get-progress")
 	else:
 		response("omitting-get-progress")
-		
+
+def delete_conf():
+	rm_file('smashbox/etc/smashbox.conf')	
+	response("ok")	
 		
 def set_conf(config_array):
-	import json
+	import json, re
 	import io
+	import time
 	try:
 		decoded_data = json.loads(config_array)
 		configuration = ""
 		for i in range(0, len(decoded_data)):
-			configuration += decoded_data[i] + '\n'
-		with io.open('smashbox.conf', 'w', encoding='utf-8') as f:
+			value = decoded_data[i]
+			configuration += value + '\n'
+		configuration += "import os.path" + '\n'
+		configuration += "oc_webdav_endpoint = os.path.join(oc_root,'remote.php/webdav')" + '\n'
+		configuration += "oc_server_datadirectory = os.path.join('/var/www/html',oc_root, 'data')" + '\n'
+		configuration += "del os" + '\n'
+		with io.open('smashbox/etc/smashbox.conf', 'w', encoding='utf-8') as f:
 			f.write(configuration)
+		response("ok")
 	except Exception, e:
 		response("error: %s" % e)	
 		
@@ -218,6 +242,8 @@ if __name__ == '__main__':
 			main(form.getvalue("test"))
 		elif case == "set_conf":
 			set_conf(form.getvalue("config"))
+		elif case == "delete_conf":
+			delete_conf()
    		elif case == "get_tests_list":
    			get_tests_list()
    		elif case == "stop_test":

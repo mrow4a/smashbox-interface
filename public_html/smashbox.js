@@ -309,15 +309,47 @@ function submitTests(){
 	init_test_layout(array);
 }
 
+
+function conf_form_focus(id, form_element){
+	var element = document.getElementById(id);
+	
+	if(element.value == form_element || element.value == form_element.value){
+		element.value = '';
+	}
+}
+
+function conf_form_blur(id,form_element){
+	element = document.getElementById(id);
+	
+	if(element.value == ''){
+		element.value = form_element;
+	}
+}
+
 function check_if_text(element){
+	element = encodeURIComponent(element);
+	
 	if(isNaN(element) && element != "None" && element != "True" && element != "False"){
 		return "\"" + element + "\"";
+	}
+	else if (element == ''){
+		return "\"" + "\"";
 	}
 	else{
 		return element;
 	}
 }
 
+function delete_conf() {
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			window.location = "index.php";
+		}
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=delete_conf", true);
+	ajaxRequest.send();
+}
 function smashbox_configuration_form (form) {
 	var ajaxRequest = new_ajax_request();
 	var array = [];
@@ -328,7 +360,15 @@ function smashbox_configuration_form (form) {
 	    	array.push(config_pair);
 	}
 	var json = encodeURIComponent(JSON.stringify(array));
-	alert(json);
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			if(ajaxRequest.responseText.search("ok") != -1){
+				window.location = "index.php";
+			}else{
+				alert(ajaxRequest.responseText);
+			}
+		}
+	}
 	ajaxRequest.open("GET", "smashbox.php?function=set_conf&test="+json, true);
 	ajaxRequest.send();
 }
@@ -351,6 +391,15 @@ function test_form(responseText){
 	check_all();
 	
 	
+}
+
+function check_checkbox(id){
+	var element = document.getElementById(id);
+	if(element.value == "True"){
+		element.value = "False";
+	}else{
+		element.value = "True";
+	}
 }
 
 function smashbox_prepare_test(){
