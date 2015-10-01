@@ -8,10 +8,7 @@
 	}
 	
 	function status_to_msg($args) {
-		if( $args == 0){
-			return "test already running";
-		}
-		elseif ($args == 1) {
+		if ($args == 1) {
 			return "ready to start tests";
 		}
 		else {
@@ -39,6 +36,8 @@
 					break;
 				case "get_conf_status":
 				case "get_progress":
+				case "stop_test":
+				case "get_history":
 				case "get_tests_list":
 				case "get_tests_list":
 				case "delete_conf":
@@ -53,7 +52,7 @@
 					smash("?function=".$_GET['function']."&test=".$_GET['test']);
 					break;
 				default:
-					echo "error";
+					echo "PHP GET FUNCTION ERROR";
 			}
 			
 		}

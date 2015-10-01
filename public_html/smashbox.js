@@ -22,23 +22,7 @@ function new_ajax_request(){
 	return ajaxRequest;
 }
 
-function get_smashbox_status(){
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			document.getElementById("smashbox_status").innerHTML = ajaxRequest.responseText;
-		}
-		else{
-			document.getElementById("smashbox_status").innerHTML = "loading..";
-		}
-		smashbox_prepare_test_enable();
-	}
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=check_status", true);
-	ajaxRequest.send();
-}
+
 
 function get_smashbox_conf(hide_sensitive){
 	var ajaxRequest = new_ajax_request();
@@ -57,6 +41,43 @@ function get_smashbox_conf(hide_sensitive){
 	ajaxRequest.send();
 }
 
+
+function init_history_layout(){
+	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+	table = document.getElementById("history_table");
+	table.style.display = 'block';
+	/*var arrayLength = array.length;
+	for (var i = 0; i < arrayLength; i++) {
+		test_name = "test_" + array[i] + ".py";
+		var row = table.insertRow(-1);
+		row.setAttribute("id", test_name, 0);
+		var cell1 = row.insertCell(0);
+		var cell2 = row.insertCell(1);
+		var cell3 = row.insertCell(2);
+		cell1.innerHTML = test_name;
+		cell2.innerHTML = "waiting";
+	}*/
+}
+
+function get_smashbox_results_history(){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			document.getElementById("test_history_div").innerHTML = ajaxRequest.responseText;
+			init_history_layout();
+		}
+		else{
+			document.getElementById("test_history_div").innerHTML = "loading..";
+		}
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_history", true);
+	ajaxRequest.send();
+	
+}
+
 function hide_sensitive(){
 	if(document.getElementById("hide_sensitive_button").value == "Show sensitive"){
 		document.getElementById("hide_sensitive_button").value = "Hide sensitive";
@@ -67,6 +88,18 @@ function hide_sensitive(){
 		get_smashbox_conf("True");
 	}
 		
+}
+
+function result_details_fun() {
+	if(document.getElementById("result_details_div").style.display == 'none'){
+		get_smashbox_results_history();
+		document.getElementById("result_details_div").style.display = 'inline';
+		document.getElementById("result_details_header_img").src="lib/dropup.png";
+	}
+	else{
+		document.getElementById("result_details_div").style.display = 'none';
+		document.getElementById("result_details_header_img").src="lib/dropdown.png";
+	}
 }
 
 function conf_details_fun() {
@@ -202,11 +235,11 @@ function get_test_progress() {
 					    	for (var i in test_instance) {
 					    		var test_results = test_instance[i]["results"];
 					    		var test_scenario = JSON.stringify(test_instance[i]["scenario"]);
-					    		var test_time = test_instance[i]["time"];
+					    		var test_time = test_instance[i]["runid"];
 					    		if( isEmpty(test_results) ){
 					    			check_test_status = 1;
 					    		}else{
-						    		test_instance_result_cell.innerHTML += "<b>Test time:</b> " + test_time + "</br><b>Scenario:</b> " + test_scenario;
+						    		test_instance_result_cell.innerHTML += "<b>Runid:</b> " + test_time + "</br><b>Scenario:</b> " + test_scenario;
 					    			test_instance_result_cell.innerHTML += "</br><b>Exec time:</b> " + test_results["exec_time"];
 					    			if(test_results.hasOwnProperty("errors")){
 					    				var test_error_length = test_results["errors"].length;
@@ -284,6 +317,42 @@ function stopTest() { // call this to stop your interval.
 	hide_test_section();
 }
 
+function get_test(array){
+	var interval = setInterval(get_test_progress, 1000);
+	document.getElementById("test_details_div").innerHTML = "<div><b>Test id: </b>"+"<span id=\"test_id\">"+interval +"</span></br>";
+	document.getElementById("test_details_div").innerHTML += "<b>Test details: </b>"+"<span id=\"test_details\">loading..</span></br>";
+	document.getElementById("test_details_div").innerHTML += "<b>Test progress: </b></div>"+"<span id=\"test_progress_status\">loading..</span></br></br>"
+	document.getElementById("test_details_div").innerHTML += "<input type=\"button\" id = \"stopTestButton\" value = \" Stop test \" onclick=\"stopTest()\" ></input>";
+	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
+	
+	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+	init_test_layout(array);
+}
+
+function get_smashbox_status(){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var smashbox_status = ajaxRequest.responseText;
+			if(smashbox_status.search("ready to start tests") == -1){
+				//alert(document.getElementById("test_details").innerHTML);
+				//alert(smashbox_status);
+				smashbox_status = "test already running";
+			}
+			document.getElementById("smashbox_status").innerHTML = smashbox_status;
+		}
+		else{
+			document.getElementById("smashbox_status").innerHTML = "loading..";
+		}
+		smashbox_prepare_test_enable();
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=check_status", true);
+	ajaxRequest.send();
+}
+
 function submitTests(){
 	var ajaxRequest = new_ajax_request();
 	var array = [];
@@ -297,16 +366,8 @@ function submitTests(){
 	var json = encodeURIComponent(JSON.stringify(array));
 	ajaxRequest.open("GET", "smashbox.php?function=run&test="+json, true);
 	ajaxRequest.send();
-	var interval = setInterval(get_test_progress, 1000);
-	document.getElementById("test_details_div").innerHTML = "<div><b>Test id: </b>"+"<span id=\"test_id\">"+interval +"</span></br>";
-	document.getElementById("test_details_div").innerHTML += "<b>Test details: </b>"+"<span id=\"test_details\">loading..</span></br>";
-	document.getElementById("test_details_div").innerHTML += "<b>Test progress: </b></div>"+"<span id=\"test_progress_status\">loading..</span></br></br>"
-	document.getElementById("test_details_div").innerHTML += "<input type=\"button\" id = \"stopTestButton\" value = \" Stop test \" onclick=\"stopTest()\" ></input>";
-	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
-	
-	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+	get_test(array);
 	init();
-	init_test_layout(array);
 }
 
 
@@ -406,6 +467,7 @@ function smashbox_prepare_test(){
 	var ajaxRequest = new_ajax_request();
 	ajaxRequest.onreadystatechange = function(){
 		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			hide_test_section();
 			test_form(ajaxRequest.responseText);
 		}
 		else{
