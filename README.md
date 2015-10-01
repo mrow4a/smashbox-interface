@@ -20,7 +20,7 @@
      ErrorLog /var/www/smashbox/logs/error.log
      CustomLog /var/www/smashbox/logs/access.log combined
 </VirtualHost>
-</pre></br>
+</pre>
 1. Next - "sudo a2ensite smashbox.com.conf"
 2. sudo pip install pyocclient
 3. sudo chown -R www-data:www-data /var/www/smashbox
