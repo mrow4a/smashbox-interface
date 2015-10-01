@@ -1,10 +1,10 @@
 #INSTALLATION
-1. create git init in "/var/www"
-2. clone repository and execute "sudo mv smashbox-interface smashbox"
-3. "sudo a2dissite 000-default.conf"
-4. At "/etc/apache2/sites-available/" create file "smashbox.com.conf"
-5. Insert that inside the file
 
+1. In "/var/www/" clone repository and execute "sudo mv smashbox-interface smashbox"
+2. sudo a2dissite 000-default.conf
+3. At "/etc/apache2/sites-available/" create file "smashbox.com.conf"
+4. Insert that inside the file
+"
 <VirtualHost *:80>
      ServerAdmin webmaster@smashbox.com
      ServerName smashbox.com
@@ -20,6 +20,10 @@
      ErrorLog /var/www/smashbox/logs/error.log
      CustomLog /var/www/smashbox/logs/access.log combined
 </VirtualHost>
-
-6. "sudo a2ensite smashbox.com.conf"
-7. "sudo service apache2 restart"
+"
+1. Next - "sudo a2ensite smashbox.com.conf"
+2. sudo pip install pyocclient
+3. sudo chown -R www-data:www-data /var/www/smashbox
+4. go to cgi-bin and "sudo chmod 755 smashbox.py"
+5. sudo a2enmod cgi
+6. sudo service apache2 restart
