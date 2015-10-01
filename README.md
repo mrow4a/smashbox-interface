@@ -12,10 +12,10 @@
      DocumentRoot /var/www/smashbox/public_html/</br>
      ScriptAlias /test /var/www/smashbox/cgi-bin</br>
      <Directory "/var/www/smashbox/cgi-bin"></br>
-        AllowOverride None</br>
-        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch</br>
-        Require all granted</br>
-        AddHandler cgi-script .pl .py</br>
+     &#09;   AllowOverride None</br>
+     &#09;   Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch</br>
+     &#09;   Require all granted</br>
+     &#09;   AddHandler cgi-script .pl .py</br>
      </Directory></br>
      ErrorLog /var/www/smashbox/logs/error.log</br>
      CustomLog /var/www/smashbox/logs/access.log combined</br>
