@@ -4,7 +4,7 @@
 2. sudo a2dissite 000-default.conf
 3. At "/etc/apache2/sites-available/" create file "smashbox.com.conf"
 4. Insert that inside the file</br>
-<pre>```
+<pre><code>
 <VirtualHost *:80>
      ServerAdmin webmaster@smashbox.com
      ServerName smashbox.com
@@ -20,7 +20,7 @@
      ErrorLog /var/www/smashbox/logs/error.log
      CustomLog /var/www/smashbox/logs/access.log combined
 </VirtualHost>
-```</pre>
+</code></pre>
 1. Next - "sudo a2ensite smashbox.com.conf"
 2. sudo pip install pyocclient
 3. sudo chown -R www-data:www-data /var/www/smashbox
