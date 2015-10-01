@@ -21,9 +21,9 @@
      CustomLog /var/www/smashbox/logs/access.log combined
 </VirtualHost>
 ```
-1. Next - "sudo a2ensite smashbox.com.conf"
-2. sudo pip install pyocclient
-3. sudo chown -R www-data:www-data /var/www/smashbox
-4. go to cgi-bin and "sudo chmod 755 smashbox.py"
-5. sudo a2enmod cgi
-6. sudo service apache2 restart
+5. Next - "sudo a2ensite smashbox.com.conf"
+6. sudo pip install pyocclient
+7. sudo chown -R www-data:www-data /var/www/smashbox
+8. go to cgi-bin and "sudo chmod 755 smashbox.py"
+9. sudo a2enmod cgi
+10. sudo service apache2 restart
