@@ -5,21 +5,21 @@
 3. At "/etc/apache2/sites-available/" create file "smashbox.com.conf"
 4. Insert that inside the file
 "</br>
-<VirtualHost *:80>
-     ServerAdmin webmaster@smashbox.com
-     ServerName smashbox.com
-     ServerAlias www.smashbox.com
-     DocumentRoot /var/www/smashbox/public_html/
-     ScriptAlias /test /var/www/smashbox/cgi-bin
-     <Directory "/var/www/smashbox/cgi-bin">
-        AllowOverride None
-        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
-        Require all granted
-        AddHandler cgi-script .pl .py
-     </Directory>
-     ErrorLog /var/www/smashbox/logs/error.log
-     CustomLog /var/www/smashbox/logs/access.log combined
-</VirtualHost>
+<VirtualHost *:80></br>
+     ServerAdmin webmaster@smashbox.com</br>
+     ServerName smashbox.com</br>
+     ServerAlias www.smashbox.com</br>
+     DocumentRoot /var/www/smashbox/public_html/</br>
+     ScriptAlias /test /var/www/smashbox/cgi-bin</br>
+     <Directory "/var/www/smashbox/cgi-bin"></br>
+        AllowOverride None</br>
+        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch</br>
+        Require all granted</br>
+        AddHandler cgi-script .pl .py</br>
+     </Directory></br>
+     ErrorLog /var/www/smashbox/logs/error.log</br>
+     CustomLog /var/www/smashbox/logs/access.log combined</br>
+</VirtualHost></br>
 "</br>
 1. Next - "sudo a2ensite smashbox.com.conf"
 2. sudo pip install pyocclient
