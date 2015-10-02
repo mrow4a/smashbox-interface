@@ -44,6 +44,7 @@
 					$smash_msg = smash("?function=".$_GET['function']);
 					echo $smash_msg;
 					break;
+				case "get_test_details":
 				case "set_conf":
 					$smash_msg = smash("?function=".$_GET['function']."&config=".$_GET['test']);
 					echo $smash_msg;

@@ -9,6 +9,14 @@ import json
 
 f_name = 'test_results.json'
 
+
+def get_data_from_json(f_name):
+	import io
+	with io.open(f_name,'r') as file:
+		data = json.load(file)	
+	return data
+
+
 def json_response(data):
 	print "Content-type: application/json"
 	print 
@@ -108,7 +116,6 @@ def update_json_info(data, info):
 
 
 def get_history():
-	import io
 	from os import listdir
 	from os.path import isfile, join
 	try:
@@ -121,8 +128,10 @@ def get_history():
 			if(len(test_correct) > 1):
 				test_correct = test_correct[1].split(".json")
 				test_name = test_correct[0]
-				test_array.append(test)
- 		response(str(test_array))
+				data = get_data_from_json(test)
+				data["info"].insert(0,test_name)
+				test_array.append(data)
+ 		json_response(test_array)
 	except Exception, e:
 		response("error: %s" % e)	
 
@@ -135,10 +144,8 @@ def get_tests_list():
  	response(str(onlyfiles))
 
 def stop_test():
-	import io
 	global f_name
-	with io.open(f_name,'r') as file:
-		data = json.load(file)
+	data = get_data_from_json(f_name)
 	if(data.has_key("info") and data["info"]!="stop" and data["info"]!="test finished"):
 		pid = data["info"]
 	data = update_json_info(data, "stop")
@@ -165,30 +172,33 @@ def stop_test_function(pid):
 
 def finish_test(tests_array = None):
 	import datetime
-	import io,os
+	import os
 	global f_name
 	if(os.path.exists(f_name)):
-		with io.open(f_name,'r') as file:
-			data = json.load(file)
+		data = get_data_from_json(f_name)	
 		if(tests_array == None):
-			with io.open('test_array.json','r') as file:
-				tests_array = json.load(file)	
-				
+			tests_array = get_data_from_json('test_array.json')	
 		if (json.dumps(data)).find("error") != -1:
-			tests_array.append("Failed")
+			tests_array.insert(0,"Failed")
 		else:
-			tests_array.append("Passed")
+			tests_array.insert(0,"Passed")
 		data = update_json_info(data, tests_array)
 		write_to_json_file(data,'test_results-'+datetime.datetime.now().strftime("%y%m%d-%H%M%S")+'.json')
 		rm_file(f_name)
-				
+
+def get_test_details(test_name):
+	f_name = "test_results-" + test_name + ".json"
+	if(os.path.exists(f_name)):
+		data = get_data_from_json(f_name)
+		json_response(data)
+	else:
+		response("error")
+		
 def get_progress():
-	import io
 	global f_name
 	if(os.path.exists(f_name)):
 		try:
-			with io.open(f_name,'r') as file:
-				data = json.load(file)
+			data = get_data_from_json(f_name)
 			if(data.has_key("info") and data["info"]!="stop" and data["info"]!="test finished"):
 				if(get_lock()==1):
 					data = update_json_info(data, "test finished")
@@ -218,8 +228,8 @@ def run(tests_array):
 			while (not os.path.exists(f_name)):
 				time.sleep(1)
 			try:
-				with io.open(f_name,'r') as file:
-					data = json.load(file)
+				
+				data = get_data_from_json(f_name)
 				if(data.has_key("info") and data["info"]=="stop"):
 					stop_test_function(pid)
 				else:
@@ -284,6 +294,8 @@ if __name__ == '__main__':
 			main(json.loads(form.getvalue("test")))
 		elif case == "set_conf":
 			set_conf(form.getvalue("config"))
+		elif case =="get_test_details":
+			get_test_details(form.getvalue("config"))
 		elif case == "delete_conf":
 			delete_conf()
    		elif case == "get_tests_list":

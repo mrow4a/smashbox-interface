@@ -42,29 +42,39 @@ function get_smashbox_conf(hide_sensitive){
 }
 
 
-function init_history_layout(){
-	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+
+
+function init_history_layout(array){
+	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th></th><th style=\"white-space: nowrap;\"><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
 	table = document.getElementById("history_table");
 	table.style.display = 'block';
-	/*var arrayLength = array.length;
+	var arrayLength = array.length;
 	for (var i = 0; i < arrayLength; i++) {
-		test_name = "test_" + array[i] + ".py";
 		var row = table.insertRow(-1);
-		row.setAttribute("id", test_name, 0);
 		var cell1 = row.insertCell(0);
 		var cell2 = row.insertCell(1);
 		var cell3 = row.insertCell(2);
-		cell1.innerHTML = test_name;
-		cell2.innerHTML = "waiting";
-	}*/
+		var cell4 = row.insertCell(3);
+		
+		var test_id = array[i]["info"][0];
+		cell1.innerHTML = "<input type='radio' id="+test_id+" class='radio-button' name='test_history_radio'>";
+		cell2.innerHTML = test_id;
+		cell3.innerHTML = "";
+		for (var j = 2; j < array[i]["info"].length; j++) {
+			cell3.innerHTML += array[i]["info"][j]+"</br>";
+		}
+		cell4.innerHTML = array[i]["info"][1];
+	}
+	document.getElementById("test_history_div").innerHTML += "</br><input type=\"button\" id = \"GetTestButton\" value = \" Get test details\" onclick=\"get_test_details()\" ></input>";
 }
 
 function get_smashbox_results_history(){
 	var ajaxRequest = new_ajax_request();
 	ajaxRequest.onreadystatechange = function(){
 		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			document.getElementById("test_history_div").innerHTML = ajaxRequest.responseText;
-			init_history_layout();
+			var results_history = JSON.parse(ajaxRequest.responseText);
+			document.getElementById("test_history_div").innerHTML = "";
+			init_history_layout(results_history);
 		}
 		else{
 			document.getElementById("test_history_div").innerHTML = "loading..";
@@ -191,99 +201,80 @@ function isEmpty(ob){
 	  return true;
 	}
 
-function get_test_progress() {
-	//alert('called');
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
+function isArray(object)
+{
+    if (object.constructor === Array) return true;
+    else return false;
+}
+
+function display_test_details(obj){
+	var test_finished = 0;
+	var server_name = "";
+	for(var key in obj) {
+	    if(obj.hasOwnProperty(key)) {
+	    	if (key!="info"){
+	    		server_name = key;
+	    	}else if(key=="info" && obj["info"]=="test finished"){
+	    		test_finished = 1;
+	    	}else if(key == "info" && obj["info"]!="stop" && !isArray(obj["info"])){
+	    		document.getElementById("test_details").innerHTML = "Script run... PID: " + obj["info"];
+	    	}
+	    }
 	}
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			var response =ajaxRequest.responseText;
-			//document.getElementById("test_progress_details_div").innerHTML = response;
-			var server_name = "";
-			var test_finished = 0;
-			if (response.search("omitting-get-progress") == -1){
-				var obj = JSON.parse(response);
-				for(var key in obj) {
-				    if(obj.hasOwnProperty(key)) {
-				    	if (key!="info"){
-				    		server_name = key;
-				    	}else if(key=="info" && obj["info"]=="test finished"){
-				    		test_finished = 1;
-				    	}else if(key == "info" && obj["info"]!="stop"){
-				    		document.getElementById("test_details").innerHTML = "Script run... PID: " + obj["info"];
-				    	}
-				    }
-				}
-				if(server_name == ""){
-					alert("test error - stop the test!");
-				}
-				else{
-					//access server
-					obj = obj[server_name];
-					for(var key in obj) {
-					    if(obj.hasOwnProperty(key)) {
-					    	//access the test instance in the json file
-					    	var test_instance = obj[key];
-					    	var test_instance_row = document.getElementById(key);
-					    	//check results of the test
-					    	var check_test_status = 0;
-					    	test_instance_result_cell = test_instance_row.cells[2];
-					    	test_instance_result_cell.innerHTML = "";
-					    	
-					    	for (var i in test_instance) {
-					    		var test_results = test_instance[i]["results"];
-					    		var test_scenario = JSON.stringify(test_instance[i]["scenario"]);
-					    		var test_time = test_instance[i]["runid"];
-					    		if( isEmpty(test_results) ){
-					    			check_test_status = 1;
-					    		}else{
-						    		test_instance_result_cell.innerHTML += "<b>Runid:</b> " + test_time + "</br><b>Scenario:</b> " + test_scenario;
-					    			test_instance_result_cell.innerHTML += "</br><b>Exec time:</b> " + test_results["exec_time"];
-					    			if(test_results.hasOwnProperty("errors")){
-					    				var test_error_length = test_results["errors"].length;
-					    				for (var i = 0; i < test_error_length; i++) {
-					    					test_instance_result_cell.innerHTML += "</br><b>Error: </b>"+test_results["errors"][i]["message"];
-					    				}
-					    				test_instance_result_cell.innerHTML += "</br><b style=\"color: red;\">Failed</b> ";
-					    			}
-					    			else{
-					    				test_instance_result_cell.innerHTML += "</br><b style=\"color: green;\">Passed</b> ";
-					    			}
-					    			test_instance_result_cell.innerHTML += "</br>--------</br>";
-					    		}
-					    	}
-					    	
-					    	if(check_test_status == 0){
-						    	test_instance_row.cells[1].innerHTML = "done";
-					    	}else{
-						    	test_instance_row.cells[1].innerHTML = "pending";
-					    	}
-					    	//document.getElementById("test_progress_details_div").innerHTML = key;
-					    }
-					}
-				}
-				
-	
+	if(server_name == ""){
+		alert("test error!");
+	}
+	else{
+		//access server
+		obj = obj[server_name];
+		for(var key in obj) {
+		    if(obj.hasOwnProperty(key)) {
+		    	//access the test instance in the json file
+		    	var test_instance = obj[key];
+		    	var test_instance_row = document.getElementById(key);
+		    	//check results of the test
+		    	var check_test_status = 0;
+		    	test_instance_result_cell = test_instance_row.cells[2];
+		    	test_instance_result_cell.innerHTML = "";
 		    	
-				if (test_finished == 1){
-					clearInterval(document.getElementById("test_id").innerHTML);
-					document.getElementById("stopTestButton").value = " Hide section ";
-					document.getElementById("stopTestButton").setAttribute( "onClick", "javascript:  hide_test_section();" );
-					document.getElementById("test_progress_status").innerHTML = "Test finished";
-					init();
-				}else{
-					document.getElementById("test_progress_status").innerHTML = "Do not refresh, test in progress..";
-				}
-			}
+		    	for (var i in test_instance) {
+		    		var test_results = test_instance[i]["results"];
+		    		var test_scenario = JSON.stringify(test_instance[i]["scenario"]);
+		    		var test_time = test_instance[i]["runid"];
+		    		if( isEmpty(test_results) ){
+		    			check_test_status = 1;
+		    		}else{
+			    		test_instance_result_cell.innerHTML += "<b>Runid:</b> " + test_time + "</br><b>Scenario:</b> " + test_scenario;
+		    			test_instance_result_cell.innerHTML += "</br><b>Exec time:</b> " + test_results["exec_time"];
+		    			if(test_results.hasOwnProperty("errors")){
+		    				var test_error_length = test_results["errors"].length;
+		    				for (var i = 0; i < test_error_length; i++) {
+		    					test_instance_result_cell.innerHTML += "</br><b>Error: </b>"+test_results["errors"][i]["message"];
+		    				}
+		    				test_instance_result_cell.innerHTML += "</br><b style=\"color: red;\">Failed</b> ";
+		    			}
+		    			else{
+		    				test_instance_result_cell.innerHTML += "</br><b style=\"color: green;\">Passed</b> ";
+		    			}
+		    			test_instance_result_cell.innerHTML += "</br>--------</br>";
+		    		}
+		    	}
+		    	
+		    	if(check_test_status == 0){
+			    	test_instance_row.cells[1].innerHTML = "done";
+		    	}else{
+			    	test_instance_row.cells[1].innerHTML = "pending";
+		    	}
+		    	//document.getElementById("test_progress_details_div").innerHTML = key;
+		    }
 		}
 	}
-	ajaxRequest.open("GET", "smashbox.php?function=get_progress", true);
-	ajaxRequest.send();
+	return test_finished;
 }
 
 function init_test_layout(array){
+	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
+	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
 	table = document.getElementById("test_table");
 	table.style.display = 'block';
 	var arrayLength = array.length;
@@ -298,6 +289,80 @@ function init_test_layout(array){
 		cell2.innerHTML = "waiting";
 	}
 }
+
+function request_test_details(id){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var obj = JSON.parse(ajaxRequest.responseText);
+			var tmp_array = obj["info"];
+			var array = [];
+			for (var i = 1; i < tmp_array.length; i++) {
+				array.push(tmp_array[i]);
+			}
+			document.getElementById("test_details_div").innerHTML = "";
+			init_test_layout(array)
+			display_test_details(obj)
+		}
+		else{
+			//document.getElementById("conf_details").innerHTML = "loading..";
+		}
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_test_details&test="+id, true);
+	ajaxRequest.send();
+}
+
+function get_test_details(){
+	var test_history_radio = document.getElementsByName('test_history_radio');
+	var selected_id=null;
+	for(var i = 0; i < test_history_radio.length; i++){
+	    if(test_history_radio[i].checked){
+	    	selected_id = test_history_radio[i].id;
+	    }
+	}
+	if(selected_id===null){
+		alert("Select test");
+	}else{
+		request_test_details(selected_id);
+	}
+	
+}
+
+
+function get_test_progress() {
+	//alert('called');
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var response =ajaxRequest.responseText;
+			//document.getElementById("test_progress_details_div").innerHTML = response;
+			var test_finished = 0;
+			if (response.search("omitting-get-progress") == -1){
+				var obj = JSON.parse(response);
+				test_finished = display_test_details(obj);
+			}
+			
+			if (test_finished == 1){
+				clearInterval(document.getElementById("test_id").innerHTML);
+				document.getElementById("stopTestButton").value = " Hide section ";
+				document.getElementById("stopTestButton").setAttribute( "onClick", "javascript:  hide_test_section();" );
+				document.getElementById("test_progress_status").innerHTML = "Test finished";
+				init();
+			}else{
+				document.getElementById("test_progress_status").innerHTML = "Do not refresh, test in progress..";
+			}
+		}
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_progress", true);
+	ajaxRequest.send();
+}
+
 
 function stopTest() { // call this to stop your interval.
 	var ajaxRequest = new_ajax_request();
@@ -323,9 +388,6 @@ function get_test(array){
 	document.getElementById("test_details_div").innerHTML += "<b>Test details: </b>"+"<span id=\"test_details\">loading..</span></br>";
 	document.getElementById("test_details_div").innerHTML += "<b>Test progress: </b></div>"+"<span id=\"test_progress_status\">loading..</span></br></br>"
 	document.getElementById("test_details_div").innerHTML += "<input type=\"button\" id = \"stopTestButton\" value = \" Stop test \" onclick=\"stopTest()\" ></input>";
-	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
-	
-	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
 	init_test_layout(array);
 }
 
