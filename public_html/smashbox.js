@@ -308,8 +308,9 @@ function request_test_details(id){
 				array.push(tmp_array[i]);
 			}
 			document.getElementById("test_details_div").innerHTML = "";
-			init_test_layout(array)
-			display_test_details(obj)
+			init_test_layout(array);
+			display_test_details(obj);
+			document.getElementById("test_details_div").innerHTML += "</br><input type=\"button\" id = \"HideTestButton\" value = \" Hide section \" onclick=\"hide_test_section();\" ></input>";
 		}
 		else{
 			//document.getElementById("conf_details").innerHTML = "loading..";
