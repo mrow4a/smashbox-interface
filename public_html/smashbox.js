@@ -45,10 +45,17 @@ function get_smashbox_conf(hide_sensitive){
 
 
 function init_history_layout(array){
-	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th></th><th style=\"white-space: nowrap;\"><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th></th><th><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
 	table = document.getElementById("history_table");
 	table.style.display = 'block';
 	var arrayLength = array.length;
+	array.sort(function(a, b){
+		a = a["info"][0];
+		a = a.replace("-", "");
+		b = b["info"][0];
+		b = b.replace("-", "");
+	    return b - a;
+	});
 	for (var i = 0; i < arrayLength; i++) {
 		var row = table.insertRow(-1);
 		var cell1 = row.insertCell(0);
