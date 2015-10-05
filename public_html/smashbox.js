@@ -44,11 +44,10 @@ function get_smashbox_conf(hide_sensitive){
 
 
 
-function init_history_layout(array){
+function init_history_layout(array, arrayLength, start_from){
 	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th></th><th><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
 	table = document.getElementById("history_table");
 	table.style.display = 'block';
-	var arrayLength = array.length;
 	array.sort(function(a, b){
 		a = a["info"][0];
 		a = a.replace("-", "");
@@ -56,7 +55,13 @@ function init_history_layout(array){
 		b = b.replace("-", "");
 	    return b - a;
 	});
-	for (var i = 0; i < arrayLength; i++) {
+	start_from=start_from*5;
+	var finish = start_from+5;
+	if(finish > arrayLength){
+		finish = arrayLength;
+	}
+	
+	for (var i = start_from; i < finish; i++) {
 		var row = table.insertRow(-1);
 		var cell1 = row.insertCell(0);
 		var cell2 = row.insertCell(1);
@@ -64,7 +69,7 @@ function init_history_layout(array){
 		var cell4 = row.insertCell(3);
 		
 		var test_id = array[i]["info"][0];
-		cell1.innerHTML = "<input type='radio' id="+test_id+" class='radio-button' name='test_history_radio'>";
+		cell1.innerHTML = "<input type='radio' id="+test_id+" class='radio-button' name='test_history_radio' onclick='get_test_details();'>";
 		cell2.innerHTML = test_id;
 		cell3.innerHTML = "";
 		for (var j = 2; j < array[i]["info"].length; j++) {
@@ -72,16 +77,40 @@ function init_history_layout(array){
 		}
 		cell4.innerHTML = array[i]["info"][1];
 	}
-	document.getElementById("test_history_div").innerHTML += "</br><input type=\"button\" id = \"GetTestButton\" value = \" Get test details\" onclick=\"get_test_details()\" ></input>";
 }
 
-function get_smashbox_results_history(){
+function get_smashbox_results_history(selection){
 	var ajaxRequest = new_ajax_request();
 	ajaxRequest.onreadystatechange = function(){
 		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
 			var results_history = JSON.parse(ajaxRequest.responseText);
-			document.getElementById("test_history_div").innerHTML = "";
-			init_history_layout(results_history);
+			var arrayLength = results_history.length;
+			var max_size = 5;
+			var div = (arrayLength/max_size>>0);
+			if ((arrayLength % max_size)!=0){
+				div += 1;
+			}
+			selection = parseInt(selection);
+			document.getElementById("test_history_div").innerHTML = '<select id="test_history_select" onChange="get_smashbox_results_history(this.options[this.selectedIndex].value);"></select></br>';
+			init_history_layout(results_history, arrayLength, selection);
+			document.getElementById("test_history_div").innerHTML += "</br>Page " + (selection+1) + " from " + div;
+			
+			var select = document.getElementById("test_history_select");
+			var option = document.createElement("option");
+			option.text = "Select group of results";
+			option.value = 0;
+			select.appendChild(option);
+			for (var i = 0; i < div; i++) {
+				var option = document.createElement("option");
+				var option_text_value = (i*5)
+				if((option_text_value+4)>arrayLength){
+					option.text = option_text_value+"-"+(arrayLength);
+				}else{
+					option.text = option_text_value+"-"+(option_text_value+4);
+				}
+				option.value = i;
+				select.appendChild(option);
+			}
 		}
 		else{
 			document.getElementById("test_history_div").innerHTML = "loading..";
@@ -109,7 +138,7 @@ function hide_sensitive(){
 
 function result_details_fun() {
 	if(document.getElementById("result_details_div").style.display == 'none'){
-		get_smashbox_results_history();
+		get_smashbox_results_history(0);
 		document.getElementById("result_details_div").style.display = 'inline';
 		document.getElementById("result_details_header_img").src="lib/dropup.png";
 	}
