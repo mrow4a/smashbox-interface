@@ -17,6 +17,7 @@
 		<title>Smashbox</title>
 		<link href="lib/style.css" rel="stylesheet" type="text/css" media="screen" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script language="javascript" type="text/javascript" src="../utilities.js"></script>
 		<script language="javascript" type="text/javascript" src="../smashbox.js"></script>
 	</head>
 	<body>

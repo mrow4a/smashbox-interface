@@ -1,28 +1,75 @@
+/** General functions section **/
 
-function new_ajax_request(){
-	var ajaxRequest;  // The variable that makes Ajax possible!
-	
-	try{
-		// Opera 8.0+, Firefox, Safari
-		ajaxRequest = new XMLHttpRequest();
-	} catch (e){
-		// Internet Explorer Browsers
-		try{
-			ajaxRequest = new ActiveXObject("Msxml2.XMLHTTP");
-		} catch (e) {
-			try{
-				ajaxRequest = new ActiveXObject("Microsoft.XMLHTTP");
-			} catch (e){
-				// Something went wrong
-				alert("Your browser broke!");
-				return false;
-			}
+function smashbox_prepare_test_enable(){
+	smashbox_conf_status=document.getElementById("smashbox_conf_status").innerHTML;
+	smashbox_status=document.getElementById("smashbox_status").innerHTML;
+	if(smashbox_conf_status.search("OK")!= -1 && smashbox_status.search("start")!= -1){
+		if(document.getElementById("prepare_test_button").disabled){ 
+			document.getElementById("prepare_test_button").removeAttribute("disabled");
 		}
 	}
-	return ajaxRequest;
+	else{
+		document.getElementById("prepare_test_button").setAttribute("disabled", "disabled");
+	}
 }
 
+function init(){
+	get_smashbox_status();
+	get_smashbox_conf_status();
+}
 
+function hide_test_section(){
+	document.getElementById("test_details_div").innerHTML = "";
+	document.getElementById("test_progress_details_div").innerHTML = "";
+	init();
+}
+
+function get_smashbox_status(){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var smashbox_status = ajaxRequest.responseText;
+			if(smashbox_status.search("ready to start tests") == -1){
+				//alert(document.getElementById("test_details").innerHTML);
+				//alert(smashbox_status);
+				smashbox_status = "test already running";
+			}
+			document.getElementById("smashbox_status").innerHTML = smashbox_status;
+		}
+		else{
+			document.getElementById("smashbox_status").innerHTML = "loading..";
+		}
+		smashbox_prepare_test_enable();
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=check_status", true);
+	ajaxRequest.send();
+}
+
+function smashbox_prepare_test(){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			hide_test_section();
+			//alert(ajaxRequest.responseText);
+			test_form(ajaxRequest.responseText);
+		}
+		else{
+			document.getElementById("test_details_div").innerHTML = "loading..";
+		}
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_tests_list", true);
+	ajaxRequest.send();
+	
+}
+/*********************/
+
+/**Smashbox configuration section **/
 
 function get_smashbox_conf(hide_sensitive){
 	var ajaxRequest = new_ajax_request();
@@ -42,7 +89,163 @@ function get_smashbox_conf(hide_sensitive){
 }
 
 
+function hide_sensitive(){
+	if(document.getElementById("hide_sensitive_button").value == "Show sensitive"){
+		document.getElementById("hide_sensitive_button").value = "Hide sensitive";
+		get_smashbox_conf("False");
+	}
+	else{
+		document.getElementById("hide_sensitive_button").value = "Show sensitive";
+		get_smashbox_conf("True");
+	}
+		
+}
 
+function conf_details_fun() {
+	if(document.getElementById("conf_details_div").style.display == 'none'){
+		get_smashbox_conf("True");
+		document.getElementById("conf_details_div").style.display = 'inline';
+		document.getElementById("conf_details_header_img").src="lib/dropup.png";
+	}
+	else{
+		document.getElementById("conf_details_div").style.display = 'none';
+		document.getElementById("conf_details_header_img").src="lib/dropdown.png";
+	}
+}
+
+function get_smashbox_conf_status(){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var array = ajaxRequest.responseText;
+			if(array.search("200 OK")== -1){
+				document.getElementById("smashbox_conf_status").innerHTML = "ERROR - click for details";
+			}else {
+				if (document.getElementById("smashbox_conf_status_details").style.display == 'none'){
+					document.getElementById("smashbox_conf_status").innerHTML = "OK - click for details";
+				}else{
+					document.getElementById("smashbox_conf_status").innerHTML = "OK - click to hide details";
+				}
+			}
+			document.getElementById("smashbox_conf_status_details").innerHTML = array;
+			smashbox_prepare_test_enable();
+		}
+		else{
+			document.getElementById("smashbox_conf_status_details").innerHTML = "";
+			document.getElementById("smashbox_conf_status").innerHTML = "loading..";
+		}
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_conf_status", true);
+	ajaxRequest.send();
+}
+
+function conf_status_details_fun(){
+	if (document.getElementById("smashbox_conf_status_details").style.display == 'none'){
+		document.getElementById("smashbox_conf_status").innerHTML = "OK - click for details";
+		document.getElementById("smashbox_conf_status_details").style.display = 'block';
+	}else{
+		document.getElementById("smashbox_conf_status").innerHTML = "OK - click to hide details";
+		document.getElementById("smashbox_conf_status_details").style.display = 'none';
+	}
+	get_smashbox_conf_status();
+}
+
+function conf_form_focus(id, form_element){
+	var element = document.getElementById(id);
+	
+	if(element.value == form_element || element.value == form_element.value){
+		element.value = '';
+	}
+}
+
+function conf_form_blur(id,form_element){
+	element = document.getElementById(id);
+	
+	if(element.value == ''){
+		element.value = form_element;
+	}
+}
+
+function delete_conf() {
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			window.location = "index.php";
+		}
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=delete_conf", true);
+	ajaxRequest.send();
+}
+
+function smashbox_configuration_form (form) {
+	var ajaxRequest = new_ajax_request();
+	var array = [];
+	var elements = document.getElementsByName('oc_config');
+	for(var i=0, n=elements.length;i<n;i++) {
+			
+			var config_pair= elements[i].id + "\=" +check_if_text(elements[i].value);
+	    	array.push(config_pair);
+	}
+	var json = encodeURIComponent(JSON.stringify(array));
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			if(ajaxRequest.responseText.search("ok") != -1){
+				window.location = "index.php";
+			}else{
+				alert(ajaxRequest.responseText);
+			}
+		}
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=set_conf&test="+json, true);
+	ajaxRequest.send();
+}
+
+/****************************************/
+
+
+/****** Test history section *******/
+
+function request_test_details(id){
+	var ajaxRequest = new_ajax_request();
+	ajaxRequest.onreadystatechange = function(){
+		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+			var obj = JSON.parse(ajaxRequest.responseText);
+			var array = obj["info"][1];
+			document.getElementById("test_details_div").innerHTML = "";
+			init_test_layout(array);
+			display_test_details(obj);
+			document.getElementById("test_details_div").innerHTML += "</br><input type=\"button\" id = \"HideTestButton\" value = \" Hide section \" onclick=\"hide_test_section();\" ></input>";
+		}
+		else{
+			//document.getElementById("conf_details").innerHTML = "loading..";
+		}
+	}
+	ajaxRequest.onerror = function(e) {
+    		alert("Error Status: " + e.target.status);
+	}
+	ajaxRequest.open("GET", "smashbox.php?function=get_test_details&test="+id, true);
+	ajaxRequest.send();
+}
+
+
+function get_test_details(){
+	var test_history_radio = document.getElementsByName('test_history_radio');
+	var selected_id=null;
+	for(var i = 0; i < test_history_radio.length; i++){
+	    if(test_history_radio[i].checked){
+	    	selected_id = test_history_radio[i].id;
+	    }
+	}
+	if(selected_id===null){
+		alert("Select test");
+	}else{
+		request_test_details(selected_id);
+	}
+	
+}
 
 function init_history_layout(array, arrayLength, start_from){
 	document.getElementById("test_history_div").innerHTML += "</br><table id=\"history_table\"><tr><th></th><th><b>Test id</b></th><th><b>Content</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
@@ -72,8 +275,13 @@ function init_history_layout(array, arrayLength, start_from){
 		cell1.innerHTML = "<input type='radio' id="+test_id+" class='radio-button' name='test_history_radio' onclick='get_test_details();'>";
 		cell2.innerHTML = test_id;
 		cell3.innerHTML = "";
-		for (var j = 2; j < array[i]["info"].length; j++) {
-			cell3.innerHTML += array[i]["info"][j]+"</br>";
+		var test_info = array[i]["info"][2]; 
+		for(var key in test_info) {
+		    if(test_info.hasOwnProperty(key)) {
+		    	for (var j = 0; j < test_info[key].length; j++) {
+		    		cell3.innerHTML += "<span style=\"white-space: nowrap;\">"+key + " (testset="+test_info[key][j][0]+", loop="+test_info[key][j][1]+")</span></br>";
+		    	}
+		    }
 		}
 		cell4.innerHTML = array[i]["info"][1];
 	}
@@ -93,7 +301,7 @@ function get_smashbox_results_history(selection){
 			selection = parseInt(selection);
 			document.getElementById("test_history_div").innerHTML = '<select id="test_history_select" onChange="get_smashbox_results_history(this.options[this.selectedIndex].value);"></select></br>';
 			init_history_layout(results_history, arrayLength, selection);
-			document.getElementById("test_history_div").innerHTML += "</br>Page " + (selection+1) + " from " + div;
+			document.getElementById("test_history_div").innerHTML += "</br><b>Page " + (selection+1) + " from " + div+"</b>";
 			
 			var select = document.getElementById("test_history_select");
 			var option = document.createElement("option");
@@ -124,18 +332,6 @@ function get_smashbox_results_history(selection){
 	
 }
 
-function hide_sensitive(){
-	if(document.getElementById("hide_sensitive_button").value == "Show sensitive"){
-		document.getElementById("hide_sensitive_button").value = "Hide sensitive";
-		get_smashbox_conf("False");
-	}
-	else{
-		document.getElementById("hide_sensitive_button").value = "Show sensitive";
-		get_smashbox_conf("True");
-	}
-		
-}
-
 function result_details_fun() {
 	if(document.getElementById("result_details_div").style.display == 'none'){
 		get_smashbox_results_history(0);
@@ -148,99 +344,51 @@ function result_details_fun() {
 	}
 }
 
-function conf_details_fun() {
-	if(document.getElementById("conf_details_div").style.display == 'none'){
-		get_smashbox_conf("True");
-		document.getElementById("conf_details_div").style.display = 'inline';
-		document.getElementById("conf_details_header_img").src="lib/dropup.png";
-	}
-	else{
-		document.getElementById("conf_details_div").style.display = 'none';
-		document.getElementById("conf_details_header_img").src="lib/dropdown.png";
-	}
-}
+/***** Prepare custom test section *****/
 
-function conf_status_details_fun(){
-	if (document.getElementById("smashbox_conf_status_details").style.display == 'none'){
-		get_smashbox_conf_status();
-		document.getElementById("smashbox_conf_status").innerHTML = "OK - click for details";
-		document.getElementById("smashbox_conf_status_details").style.display = 'block';
+function check_all(value){
+	test_checkbox = document.getElementsByName('test_checkbox');
+	scenario_checkbox = document.getElementsByName('scenario_checkbox');
+	if(value == "all"){
+		var source_check = document.getElementById('check_all').checked;
+		for(var i=0, n=test_checkbox.length;i<n;i++) {
+			test_checkbox[i].checked = source_check;
+		}
+		for(var i=0, n=scenario_checkbox.length;i<n;i++) {
+			scenario_checkbox[i].checked = source_check;
+		}
 	}else{
-		get_smashbox_conf_status();
-		document.getElementById("smashbox_conf_status").innerHTML = "OK - click to hide details";
-		document.getElementById("smashbox_conf_status_details").style.display = 'none';
-	}
-}
-function get_smashbox_conf_status(){
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			var array = ajaxRequest.responseText;
-			if(array.search("200 OK")== -1){
-				document.getElementById("smashbox_conf_status").innerHTML = "ERROR - click for details";
-			}else {
-				if (document.getElementById("smashbox_conf_status_details").style.display == 'none'){
-					document.getElementById("smashbox_conf_status").innerHTML = "OK - click for details";
-				}else{
-					document.getElementById("smashbox_conf_status").innerHTML = "OK - click to hide details";
-				}
+		var source_check = document.getElementById(value).checked;
+		for(var i=0, n=scenario_checkbox.length;i<n;i++) {
+			if(scenario_checkbox[i].value == value){
+				scenario_checkbox[i].checked = source_check;
 			}
-			document.getElementById("smashbox_conf_status_details").innerHTML = array;
-			smashbox_prepare_test_enable();
-		}
-		else{
-			document.getElementById("smashbox_conf_status_details").innerHTML = "";
-			document.getElementById("smashbox_conf_status").innerHTML = "loading..";
 		}
 	}
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=get_conf_status", true);
-	ajaxRequest.send();
-	
-}
-
-
-function smashbox_prepare_test_enable(){
-	smashbox_conf_status=document.getElementById("smashbox_conf_status").innerHTML;
-	smashbox_status=document.getElementById("smashbox_status").innerHTML;
-	if(smashbox_conf_status.search("OK")!= -1 && smashbox_status.search("start")!= -1){
-		if(document.getElementById("prepare_test_button").disabled){ 
-			document.getElementById("prepare_test_button").removeAttribute("disabled");
-		}
-	}
-	else{
-		document.getElementById("prepare_test_button").setAttribute("disabled", "disabled");
-	}
 	
 	
 }
 
-function check_all(){
-	checkboxes = document.getElementsByName('test_checkbox');
-	var source_check = document.getElementById('check_all').checked;
-	for(var i=0, n=checkboxes.length;i<n;i++) {
-	    checkboxes[i].checked = source_check;
-	}
+/****** Test results section ********/
+
+function init_test_layout(array){
+	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
+	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
+	table = document.getElementById("test_table");
+	table.style.display = 'block';
 	
-}
-
-function hide_test_section(){
-	document.getElementById("test_details_div").innerHTML = "";
-	document.getElementById("test_progress_details_div").innerHTML = "";
-	init();
-}
-
-function isEmpty(ob){
-	   for(var i in ob){ return false;}
-	  return true;
+	for(var key in array) {
+	    if(array.hasOwnProperty(key)) {
+	    	test_name = "test_" + key + ".py";
+			var row = table.insertRow(-1);
+			row.setAttribute("id", test_name, 0);
+			var cell1 = row.insertCell(0);
+			var cell2 = row.insertCell(1);
+			var cell3 = row.insertCell(2);
+			cell1.innerHTML = test_name;
+			cell2.innerHTML = "waiting";
+	    }
 	}
-
-function isArray(object)
-{
-    if (object.constructor === Array) return true;
-    else return false;
 }
 
 function display_test_details(obj){
@@ -308,66 +456,7 @@ function display_test_details(obj){
 	return test_finished;
 }
 
-function init_test_layout(array){
-	document.getElementById("test_details_div").innerHTML += "<div id=\"test_progress\"></div>";
-	document.getElementById("test_progress").innerHTML += "</br><table id=\"test_table\"><tr><th><b>Test name</b></th><th><b>Status</b></th><th style=\"width:100%; white-space: normal;\"><b>Result</b></th></tr></table>";
-	table = document.getElementById("test_table");
-	table.style.display = 'block';
-	var arrayLength = array.length;
-	for (var i = 0; i < arrayLength; i++) {
-		test_name = "test_" + array[i] + ".py";
-		var row = table.insertRow(-1);
-		row.setAttribute("id", test_name, 0);
-		var cell1 = row.insertCell(0);
-		var cell2 = row.insertCell(1);
-		var cell3 = row.insertCell(2);
-		cell1.innerHTML = test_name;
-		cell2.innerHTML = "waiting";
-	}
-}
-
-function request_test_details(id){
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			var obj = JSON.parse(ajaxRequest.responseText);
-			var tmp_array = obj["info"];
-			var array = [];
-			for (var i = 1; i < tmp_array.length; i++) {
-				array.push(tmp_array[i]);
-			}
-			document.getElementById("test_details_div").innerHTML = "";
-			init_test_layout(array);
-			display_test_details(obj);
-			document.getElementById("test_details_div").innerHTML += "</br><input type=\"button\" id = \"HideTestButton\" value = \" Hide section \" onclick=\"hide_test_section();\" ></input>";
-		}
-		else{
-			//document.getElementById("conf_details").innerHTML = "loading..";
-		}
-	}
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=get_test_details&test="+id, true);
-	ajaxRequest.send();
-}
-
-function get_test_details(){
-	var test_history_radio = document.getElementsByName('test_history_radio');
-	var selected_id=null;
-	for(var i = 0; i < test_history_radio.length; i++){
-	    if(test_history_radio[i].checked){
-	    	selected_id = test_history_radio[i].id;
-	    }
-	}
-	if(selected_id===null){
-		alert("Select test");
-	}else{
-		request_test_details(selected_id);
-	}
-	
-}
-
+/**** Running test progress section *****/
 
 function get_test_progress() {
 	//alert('called');
@@ -400,7 +489,6 @@ function get_test_progress() {
 	ajaxRequest.send();
 }
 
-
 function stopTest() { // call this to stop your interval.
 	var ajaxRequest = new_ajax_request();
 	ajaxRequest.onerror = function(e) {
@@ -428,162 +516,88 @@ function get_test(array){
 	init_test_layout(array);
 }
 
-function get_smashbox_status(){
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			var smashbox_status = ajaxRequest.responseText;
-			if(smashbox_status.search("ready to start tests") == -1){
-				//alert(document.getElementById("test_details").innerHTML);
-				//alert(smashbox_status);
-				smashbox_status = "test already running";
-			}
-			document.getElementById("smashbox_status").innerHTML = smashbox_status;
-		}
-		else{
-			document.getElementById("smashbox_status").innerHTML = "loading..";
-		}
-		smashbox_prepare_test_enable();
-	}
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=check_status", true);
-	ajaxRequest.send();
-}
-
 function submitTests(){
 	var ajaxRequest = new_ajax_request();
-	var array = [];
-	
-	checkboxes = document.getElementsByName('test_checkbox');
+	var array = JSON.parse('[{}]');
+	var loop = "1";
+	checkboxes = document.getElementsByName('scenario_checkbox');
 	for(var i=0, n=checkboxes.length;i<n;i++) {
 	    if(checkboxes[i].checked){
-	    	array.push(checkboxes[i].value);
+	    	var test = checkboxes[i].value;
+	    	var scenario = checkboxes[i].id;
+	    	var scenario_array = scenario.split("-"); //[scenario id, loop]
+	    	if(!array[0].hasOwnProperty(test)) {
+	    		array[0][test] = [];
+	    	}
+	    	array[0][test].push(scenario_array);
 	    }
 	}
 	var json = encodeURIComponent(JSON.stringify(array));
 	ajaxRequest.open("GET", "smashbox.php?function=run&test="+json, true);
 	ajaxRequest.send();
-	get_test(array);
+	get_test(array[0]);
 	init();
 }
 
-
-function conf_form_focus(id, form_element){
-	var element = document.getElementById(id);
-	
-	if(element.value == form_element || element.value == form_element.value){
-		element.value = '';
-	}
-}
-
-function conf_form_blur(id,form_element){
-	element = document.getElementById(id);
-	
-	if(element.value == ''){
-		element.value = form_element;
-	}
-}
-
-function check_if_text(element){
-	element = encodeURIComponent(element);
-	
-	if(isNaN(element) && element != "None" && element != "True" && element != "False"){
-		return "\"" + element + "\"";
-	}
-	else if (element == ''){
-		return "\"" + "\"";
-	}
-	else{
-		return element;
-	}
-}
-
-function delete_conf() {
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			window.location = "index.php";
-		}
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=delete_conf", true);
-	ajaxRequest.send();
-}
-function smashbox_configuration_form (form) {
-	var ajaxRequest = new_ajax_request();
-	var array = [];
-	var elements = document.getElementsByName('oc_config');
-	for(var i=0, n=elements.length;i<n;i++) {
-			
-			var config_pair= elements[i].id + "\=" +check_if_text(elements[i].value);
-	    	array.push(config_pair);
-	}
-	var json = encodeURIComponent(JSON.stringify(array));
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			if(ajaxRequest.responseText.search("ok") != -1){
-				window.location = "index.php";
+function operate_on_loop(id, name,oper){
+	loop_info = document.getElementsByName('loop_info');
+	for(var i=0, n=loop_info.length;i<n;i++) {
+		var loop = loop_info[i].id;
+		loop=loop.split("-");
+		if(id==loop[1] && name == loop[0]){
+			var loop_cnt = loop_info[i].innerHTML;
+			if(oper=="inc"){
+				loop_cnt =  (parseInt(loop_cnt)+1);
 			}else{
-				alert(ajaxRequest.responseText);
+				if(loop_info[i].innerHTML=="1"){
+					alert("cannot be less than 1");
+				}else{
+					loop_cnt =  (parseInt(loop_cnt)-1);
+				}
+			}
+			loop_info[i].innerHTML =loop_cnt;
+			scenario_checkbox = document.getElementsByName('scenario_checkbox');
+			for(var j=0, x=scenario_checkbox.length;j<x;j++) {
+				var scenario_id = scenario_checkbox[j].id;
+				scenario_id=scenario_id.split("-");
+				if(scenario_id[0]==id && scenario_checkbox[j].value == name){
+					scenario_checkbox[j].id = id+"-"+loop_cnt;
+				}
 			}
 		}
 	}
-	ajaxRequest.open("GET", "smashbox.php?function=set_conf&test="+json, true);
-	ajaxRequest.send();
 }
 
+function inc_loop(id, name){
+	operate_on_loop(id, name,"inc");
+}
+
+function dec_loop(id, name){
+	operate_on_loop(id, name,"dec");
+}
 function test_form(responseText){
-	var array = responseText;
-	var obj = array.split(",");
+	var obj = JSON.parse(responseText);
 	var test = "";
-	document.getElementById("test_details_div").innerHTML = '<div style="border-bottom: 1px solid;" ><input type="checkbox" id="check_all" name="check_all" onclick="check_all()" checked >&#09<b>Test name</b></div><form name="test_form"><div style="padding: 5px 0px 0px 0px;">';
+	//alert(responseText);
+	document.getElementById("test_details_div").innerHTML = '<div style="border-bottom: 1px solid;" ><input type="checkbox" id="check_all" name="check_all" value="all" onclick="check_all(this.value)" checked >&#09<b>Test name</b></div><form name="test_form"><div style="padding: 5px 0px 0px 0px;">';
 	for (i = 0; i < obj.length; i++) { 
-		test = obj[i].replace(".py", "");
-		test = test.replace("test_", "");
-		test = test.replace(/[^a-zA-Z0-9]/g, "");
-		if(test != "README"){
-			document.getElementById("test_details_div").innerHTML += '<span style="padding: 0px 0px 2px 5px;">&nbsp;</span><input type="checkbox" name="test_checkbox" value="'+ test +'">&#09' + test + '<br>';
+		var test_instance = obj[i];
+		for(var test in test_instance) {
+		    if(test_instance.hasOwnProperty(test)) {
+		    		document.getElementById("test_details_div").innerHTML += '<div style="display: inline;padding: 0px 0px 2px 5px;"><input type="checkbox" name="test_checkbox" onclick="check_all(this.value)" id="'+test+'" value="'+ test +'"checked >&#09<b>' + test + '</b></div>'+
+		    		'<div style="display: inline;padding: 0px 0px 2px 5px;"><p id="test_info"><a >[?]<span>'+test_instance[test]['info']+'</span></a></p></div></br>';
+		    		var scenario = test_instance[test]['scenario'];
+		    		for (j = 0; j < scenario.length; j++) {
+		    			document.getElementById("test_details_div").innerHTML += '<span style="padding: 0px 0px 2px 15px;"></span><input type="checkbox" name="scenario_checkbox" id="'+j+"-"+"1"+'" value="'+ test +'"checked >&#09Scenario ' + j + 
+		    			' <p id="scenario_info"><a >[?]<span>'+JSON.stringify(scenario[j])+'</span></a> </p>(loop: <span id="'+test+'-'+j+'" name="loop_info" >1</span>) <a id="'+j+'" name="'+test+'" onclick="inc_loop(this.id, this.name);">[+]</a><a id="'+j+'" name="'+test+'" onclick="dec_loop(this.id, this.name);">[-]</a> </br>';
+		    		}
+		    		document.getElementById("test_details_div").innerHTML += "</br>";
+		    }
 		}
+		
 	}
 	
-	document.getElementById("test_details_div").innerHTML += '</br><input type="button" value=" Run test " name="testButton" onClick="submitTests()">&#09<input type="button" value=" Hide section " name="hideTestButton" onClick="hide_test_section()"></div></form></br></br>';
-	check_all();
-	
-	
-}
-
-function check_checkbox(id){
-	var element = document.getElementById(id);
-	if(element.value == "True"){
-		element.value = "False";
-	}else{
-		element.value = "True";
-	}
-}
-
-function smashbox_prepare_test(){
-	var ajaxRequest = new_ajax_request();
-	ajaxRequest.onreadystatechange = function(){
-		if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
-			hide_test_section();
-			test_form(ajaxRequest.responseText);
-		}
-		else{
-			document.getElementById("test_details_div").innerHTML = "loading..";
-		}
-	}
-	ajaxRequest.onerror = function(e) {
-    		alert("Error Status: " + e.target.status);
-	}
-	ajaxRequest.open("GET", "smashbox.php?function=get_tests_list", true);
-	ajaxRequest.send();
-	
-}
-
-function init(){
-	get_smashbox_status();
-	get_smashbox_conf_status();
+	document.getElementById("test_details_div").innerHTML += '</br><input type="button" value=" Run test " name="testButton" onClick="submitTests()">&#09<input type="button" value=" Hide section " name="hideTestButton" onClick="hide_test_section()"></div></form></br></br>';		
 }
 
 

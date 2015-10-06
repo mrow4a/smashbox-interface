@@ -6,9 +6,8 @@ import subprocess
 import os
 import socket
 import json
-
+import sys
 f_name = 'test_results.json'
-
 
 def get_data_from_json(f_name):
 	import io
@@ -127,9 +126,9 @@ def get_history():
 			test_correct = test.split("test_results-", 1)
 			if(len(test_correct) > 1):
 				test_correct = test_correct[1].split(".json")
-				test_name = test_correct[0]
+				test_runid = test_correct[0]
 				data = get_data_from_json(test)
-				data["info"].insert(0,test_name)
+				data["info"].insert(0,test_runid)
 				test_array.append(data)
  		json_response(test_array)
 	except Exception, e:
@@ -139,9 +138,24 @@ def get_history():
 def get_tests_list():
 	from os import listdir
 	from os.path import isfile, join
+	import imp
 	test_path = '/var/www/smashbox/cgi-bin/smashbox/lib'
 	onlyfiles = [ f for f in listdir(test_path) if isfile(join(test_path,f)) ]
- 	response(str(onlyfiles))
+	test_array = []
+	for i in range(0, len(onlyfiles)):
+		test = onlyfiles[i]
+		test_name = test.split(".py")
+		if(len(test_name) > 1):
+			test_name = test_name[0].split("test_")
+			test_name = test_name[1]
+			path = "/var/www/smashbox/cgi-bin/smashbox/lib/" + test
+			sys.path.insert(0,'/var/www/smashbox/cgi-bin/smashbox/python')
+			import smashbox.no_engine
+			execfile(path,smashbox.no_engine.__dict__)
+			testsets = smashbox.no_engine.testsets
+			__doc__ = smashbox.no_engine.__doc__
+			test_array.append({ test_name : { 'scenario' : testsets, 'info': __doc__ }})
+ 	json_response(test_array)
 
 def stop_test():
 	global f_name
@@ -216,11 +230,13 @@ def run(tests_array):
 	import io
 	global f_name
 	try:
-		decoded_data = tests_array
+		decoded_data = tests_array[0]
 		commands = []
-		for i in range(0, len(decoded_data)):
-			test_cmd = "/var/www/smashbox/cgi-bin/smashbox/bin/smash --keep-going --testset 0 /var/www/smashbox/cgi-bin/smashbox/lib/test_" + decoded_data[i] + ".py"
-			commands.append(test_cmd)
+		for key in decoded_data.keys():
+			value = decoded_data[key]
+			for pair in value:
+				test_cmd = "/var/www/smashbox/cgi-bin/smashbox/bin/smash --keep-going --testset "+pair[0]+" --loop "+pair[1]+" /var/www/smashbox/cgi-bin/smashbox/lib/test_" + key + ".py"
+				commands.append(test_cmd)
 		
 		for cmd in commands:
 			process = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE, preexec_fn=os.setsid)

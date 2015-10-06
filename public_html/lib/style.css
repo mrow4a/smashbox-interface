@@ -193,3 +193,11 @@
 
   div.validator {
   }
+  
+#test_info { position: relative; display: inline;}
+#test_info a span { display: none; color: #FFFFFF; }
+#test_info a:hover span { display: block; position: absolute; width: 400px; background: #CD214F; height: auto; left: 100px; top: -10px; color: #FFFFFF; padding: 0 5px; border: 1px solid black;}
+  
+#scenario_info { position: relative; display: inline;}
+#scenario_info a span { display: none; color: #FFFFFF; }
+#scenario_info a:hover span { display: block; position: absolute; width: auto; background: #CD214F; height: auto; left: 100px; top: -10px; color: #FFFFFF; padding: 0 5px; border: 1px solid black;}
