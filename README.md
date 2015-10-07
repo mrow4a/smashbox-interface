@@ -1,8 +1,8 @@
 #CORE SUITE - SMASHBOX
 [Read about the smashbox](https://github.com/mrow4a/smashbox/blob/master/README.md) </br>
 or visit the page at:</br>
-[https://github.com/mrow4a/smashbox](https://github.com/mrow4a/smashbox) </br>
-[https://github.com/cernbox/smashbox](https://github.com/cernbox/smashbox) </br>
+[SMASHBOX BRANCH https://github.com/mrow4a/smashbox](https://github.com/mrow4a/smashbox) </br>
+[SMASHBOX ORIGIN https://github.com/cernbox/smashbox](https://github.com/cernbox/smashbox) </br>
 
 #INSTALLATION
 
