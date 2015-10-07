@@ -40,6 +40,7 @@
 				case "get_history":
 				case "get_tests_list":
 				case "get_tests_list":
+				case "finish_test":
 				case "delete_conf":
 					$smash_msg = smash("?function=".$_GET['function']);
 					echo $smash_msg;

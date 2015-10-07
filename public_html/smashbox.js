@@ -332,8 +332,23 @@ function get_smashbox_results_history(selection){
 	
 }
 
+function recent_test_finish_check(){
+	smashbox_status=document.getElementById("smashbox_status").innerHTML;
+	if(smashbox_status.search("ready to start tests") != -1){
+		var ajaxRequest = new_ajax_request();
+		ajaxRequest.onerror = function(e) {
+			alert("Error Status: " + e.target.status);
+		}
+		ajaxRequest.open("GET", "smashbox.php?function=finish_test", true);
+		ajaxRequest.send();
+	}
+	
+	
+}
+
 function result_details_fun() {
 	if(document.getElementById("result_details_div").style.display == 'none'){
+		recent_test_finish_check();
 		get_smashbox_results_history(0);
 		document.getElementById("result_details_div").style.display = 'inline';
 		document.getElementById("result_details_header_img").src="lib/dropup.png";
@@ -516,6 +531,8 @@ function get_test(array){
 	init_test_layout(array);
 }
 
+
+
 function submitTests(){
 	var ajaxRequest = new_ajax_request();
 	var array = JSON.parse('[{}]');
@@ -585,11 +602,14 @@ function test_form(responseText){
 		for(var test in test_instance) {
 		    if(test_instance.hasOwnProperty(test)) {
 		    		document.getElementById("test_details_div").innerHTML += '<div style="display: inline;padding: 0px 0px 2px 5px;"><input type="checkbox" name="test_checkbox" onclick="check_all(this.value)" id="'+test+'" value="'+ test +'"checked >&#09<b>' + test + '</b></div>'+
-		    		'<div style="display: inline;padding: 0px 0px 2px 5px;"><p id="test_info"><a >[?]<span>'+test_instance[test]['info']+'</span></a></p></div></br>';
+		    		'<div style="display: inline;padding: 0px 0px 2px 5px;">';
+		    		insert_info_bar("test_details_div",test_instance[test]['info'], "400px");
+		    		document.getElementById("test_details_div").innerHTML += '</div></br>';
 		    		var scenario = test_instance[test]['scenario'];
 		    		for (j = 0; j < scenario.length; j++) {
-		    			document.getElementById("test_details_div").innerHTML += '<span style="padding: 0px 0px 2px 15px;"></span><input type="checkbox" name="scenario_checkbox" id="'+j+"-"+"1"+'" value="'+ test +'"checked >&#09Scenario ' + j + 
-		    			' <p id="scenario_info"><a >[?]<span>'+JSON.stringify(scenario[j])+'</span></a> </p>(loop: <span id="'+test+'-'+j+'" name="loop_info" >1</span>) <a id="'+j+'" name="'+test+'" onclick="inc_loop(this.id, this.name);">[+]</a><a id="'+j+'" name="'+test+'" onclick="dec_loop(this.id, this.name);">[-]</a> </br>';
+		    			document.getElementById("test_details_div").innerHTML += '<span style="padding: 0px 0px 2px 15px;"></span><input type="checkbox" name="scenario_checkbox" id="'+j+"-"+"1"+'" value="'+ test +'"checked >&#09Scenario ' + j + ' ';
+			    		insert_info_bar("test_details_div",JSON.stringify(scenario[j]), "auto");
+		    			document.getElementById("test_details_div").innerHTML += ' (loop: <span id="'+test+'-'+j+'" name="loop_info" >1</span>) <a id="'+j+'" name="'+test+'" onclick="inc_loop(this.id, this.name);">[+]</a><a id="'+j+'" name="'+test+'" onclick="dec_loop(this.id, this.name);">[-]</a> </br>';
 		    		}
 		    		document.getElementById("test_details_div").innerHTML += "</br>";
 		    }

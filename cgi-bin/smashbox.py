@@ -148,13 +148,14 @@ def get_tests_list():
 		if(len(test_name) > 1):
 			test_name = test_name[0].split("test_")
 			test_name = test_name[1]
-			path = "/var/www/smashbox/cgi-bin/smashbox/lib/" + test
-			sys.path.insert(0,'/var/www/smashbox/cgi-bin/smashbox/python')
-			import smashbox.no_engine
-			execfile(path,smashbox.no_engine.__dict__)
-			testsets = smashbox.no_engine.testsets
-			__doc__ = smashbox.no_engine.__doc__
-			test_array.append({ test_name : { 'scenario' : testsets, 'info': __doc__ }})
+			if(True):
+				path = "/var/www/smashbox/cgi-bin/smashbox/lib/" + test
+				sys.path.insert(0,'/var/www/smashbox/cgi-bin/smashbox/python')
+				import smashbox.no_engine
+				execfile(path,smashbox.no_engine.__dict__)
+				testsets = smashbox.no_engine.testsets
+				__doc__ = smashbox.no_engine.__doc__
+				test_array.append({ test_name : { 'scenario' : testsets, 'info': __doc__ }})
  	json_response(test_array)
 
 def stop_test():
@@ -322,6 +323,8 @@ if __name__ == '__main__':
    			get_progress()
    		elif case == "get_history":
    			get_history()
+   		elif case == "finish_test":
+   			finish_test()
    	except Exception,e:
    		response("error: %s" % e)
 

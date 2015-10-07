@@ -47,6 +47,10 @@ function check_if_text(element){
 	}
 }
 
+function insert_info_bar(div_id, info_text, width_style){
+	document.getElementById(div_id).innerHTML += '<p id="info_bar"><a >[?]<span style="width: '+width_style+';">'+info_text+'</span></a></p>';
+}
+
 function check_checkbox(id){
 	var element = document.getElementById(id);
 	if(element.value == "True"){
