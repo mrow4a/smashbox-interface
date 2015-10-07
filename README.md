@@ -31,10 +31,11 @@
 #INSTRUCTION
 
 You could run the tests both through the interface and via url e.g.
+Command:
 ```
 localhost/test/smashbox.py?function=run&test=[{"unicodejam":[["0","2"]],"fileTinkerDownload":[["0","1"]],"basicSync":[["7","1"]]}]
 ```
-will run
-unicodejam - scenario 0, looping 2 times
-fileTinkerDownload - scenario 0, looping 1 time
-basicSync - scenario 7, looping 1 time
+will run:</br>
+* unicodejam - scenario 0, looping 2 times</br>
+* fileTinkerDownload - scenario 0, looping 1 time</br>
+* basicSync - scenario 7, looping 1 time</br>
