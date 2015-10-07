@@ -39,7 +39,7 @@
 				case "stop_test":
 				case "get_history":
 				case "get_tests_list":
-				case "get_tests_list":
+				case "get_tests_list_in_progress":
 				case "finish_test":
 				case "delete_conf":
 					$smash_msg = smash("?function=".$_GET['function']);

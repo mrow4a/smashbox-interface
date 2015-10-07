@@ -40,6 +40,7 @@ function get_smashbox_status(){
 			document.getElementById("smashbox_status").innerHTML = "loading..";
 		}
 		smashbox_prepare_test_enable();
+		get_test_in_progress_details();
 	}
 	ajaxRequest.onerror = function(e) {
     		alert("Error Status: " + e.target.status);
@@ -472,6 +473,30 @@ function display_test_details(obj){
 }
 
 /**** Running test progress section *****/
+
+function get_test_in_progress_details(){
+	var smashbox_status=document.getElementById("smashbox_status").innerHTML;
+	var test_details_div_status=document.getElementById("test_details_div").innerHTML;
+	if(test_details_div_status=="" && smashbox_status.search("test already running") != -1){
+		var ajaxRequest = new_ajax_request();
+		ajaxRequest.onreadystatechange = function(){
+			if(ajaxRequest.readyState == 4  && ajaxRequest.status == 200){
+				var response =ajaxRequest.responseText;
+				if (response.search("error") == -1){
+					//alert(response);
+					var obj = JSON.parse(response);
+					get_test(obj);
+				}
+			}
+		}
+		ajaxRequest.onerror = function(e) {
+			alert("Error Status: " + e.target.status);
+		}
+		ajaxRequest.open("GET", "smashbox.php?function=get_tests_list_in_progress", true);
+		ajaxRequest.send();
+	}
+}
+
 
 function get_test_progress() {
 	//alert('called');

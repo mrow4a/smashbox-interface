@@ -208,6 +208,17 @@ def get_test_details(test_name):
 		json_response(data)
 	else:
 		response("error")
+
+def get_tests_list_in_progress():
+	f_name = 'test_array.json'
+	try:
+		if(os.path.exists(f_name)):
+			tests_array = get_data_from_json(f_name)
+			json_response(tests_array[0])
+		else:
+			response("error")
+	except:
+		response("error")
 		
 def get_progress():
 	global f_name
@@ -317,6 +328,8 @@ if __name__ == '__main__':
 			delete_conf()
    		elif case == "get_tests_list":
    			get_tests_list()
+   		elif case == "get_tests_list_in_progress":
+   			get_tests_list_in_progress()
    		elif case == "stop_test":
    			stop_test()
    		elif case == "get_progress":
