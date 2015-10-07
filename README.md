@@ -39,3 +39,9 @@ will run:</br>
 * unicodejam - scenario 0, looping 2 times</br>
 * fileTinkerDownload - scenario 0, looping 1 time</br>
 * basicSync - scenario 7, looping 1 time</br>
+
+#CORE SUITE - SMASHBOX
+[Read about the smashbox](https://github.com/mrow4a/smashbox/blob/master/README.md) </br>
+or visit the page at:</br>
+[https://github.com/mrow4a/smashbox](https://github.com/mrow4a/smashbox) </br>
+[https://github.com/cernbox/smashbox](https://github.com/cernbox/smashbox) </br>
