@@ -103,6 +103,18 @@ function hide_sensitive(){
 }
 
 function conf_details_fun() {
+	smashbox_status=document.getElementById("smashbox_status").innerHTML;
+	if(smashbox_status.search("ready to start tests")!= -1){
+		if(document.getElementById("edit_conf_button").disabled){ 
+			document.getElementById("edit_conf_button").removeAttribute("disabled");
+			document.getElementById("delete_conf_button").removeAttribute("disabled");
+		}
+	}
+	else{
+		document.getElementById("delete_conf_button").setAttribute("disabled", "disabled");
+		document.getElementById("edit_conf_button").setAttribute("disabled", "disabled");
+	}
+	
 	if(document.getElementById("conf_details_div").style.display == 'none'){
 		get_smashbox_conf("True");
 		document.getElementById("conf_details_div").style.display = 'inline';
@@ -231,8 +243,13 @@ function request_test_details(id){
 	ajaxRequest.send();
 }
 
+function stop_test_in_progress_display(){
+	clearInterval(document.getElementById("test_id").innerHTML);
+	hide_test_section();
+}
 
 function get_test_details(){
+	stop_test_in_progress_display();
 	var test_history_radio = document.getElementsByName('test_history_radio');
 	var selected_id=null;
 	for(var i = 0; i < test_history_radio.length; i++){
@@ -349,6 +366,13 @@ function recent_test_finish_check(){
 
 function result_details_fun() {
 	if(document.getElementById("result_details_div").style.display == 'none'){
+		if(smashbox_status.search("test already running")!= -1){
+			document.getElementById("result_log_details_div").innerHTML = "<b>Test run in progress.</b></br>- Click on test radiobutton will result in stopping the display of the progress, but not the run of the test."+
+			"</br>- To display the progress of the running test, refresh the page.";
+		}
+		else{
+			document.getElementById("result_log_details_div").innerHTML = "";
+		}
 		recent_test_finish_check();
 		get_smashbox_results_history(0);
 		document.getElementById("result_details_div").style.display = 'inline';
@@ -543,8 +567,7 @@ function stopTest() { // call this to stop your interval.
 	}
 	ajaxRequest.open("GET", "smashbox.php?function=stop_test", true);
 	ajaxRequest.send();
-	clearInterval(document.getElementById("test_id").innerHTML);
-	hide_test_section();
+	stop_test_in_progress_display();
 }
 
 function get_test(array){
