@@ -30,9 +30,16 @@ def write_to_json_file(data, file=None):
 		f.write(unicode(json.dumps(data, ensure_ascii=False, indent=4)))
 		
 
-def rm_file(file_name):
-	if(os.path.exists(file_name)):
-		os.remove(file_name)
+def rm_file_dir(file_path):
+	import os, shutil
+	if(os.path.exists(file_path)):
+		try:
+			if os.path.isfile(file_path):
+				os.unlink(file_path)
+			elif os.path.isdir(file_path): 
+				shutil.rmtree(file_path)
+		except:
+			pass
 
 def get_lock():
 	process_name = 'running_test'		
@@ -59,12 +66,19 @@ class Configuration:
             return getattr(self,x)
         except AttributeError:
             return default	
-           	
-          
-def get_conf(hide_sensitive):
-	config = Configuration()
+
+def get_conf_dict():
+	config = Configuration() 
 	cf = "/var/www/smashbox/cgi-bin/smashbox/etc/smashbox.conf"
 	execfile(cf,{},config.__dict__)
+	return config
+       	
+def get_smash_conf_detail(attribute):
+	config = get_conf_dict()
+	return str(getattr(config,attribute))
+			
+def get_conf(hide_sensitive):
+	config = get_conf_dict()
 	print "Content-type:text/plain\r\n\r\n"
 	#print ("hide_sensitive: %s" % str(hide_sensitive)) + "</br>"
 	for d in dir(config):
@@ -77,7 +91,7 @@ def get_conf(hide_sensitive):
 			#print "<b>" + str(d) + "</b> = " +str(getattr(config,d))+"</br>"
 			if (d=='oc_server_folder' or d=='smashdir' or d=='oc_sync_cmd' or d=='oc_server_tools_path' or d=='web_user' or d=='rundir_reset_procedure'):
 				print '<input type="url" name="oc_config" id="'+str(d)+'" size="35" value="'+str(getattr(config,d))+'" style="font-size: 10px;" />'
-			elif (d=='oc_ssl_enabled' or d=='workdir_runid_enabled' or d=='oc_account_runid_enabled'):
+			elif (d=='oc_ssl_enabled' or d=='workdir_runid_enabled' or d=='oc_account_runid_enabled' or d == 'keep_test_rundir' or d == 'keep_log_failed' or d == 'keep_logs'):
 				if(str(getattr(config,d))=="True"):
 					checked = "checked"
 				else:
@@ -90,7 +104,7 @@ def get_conf(hide_sensitive):
 
 def get_conf_status():
 	print "Content-type:text/plain\r\n\r\n"
-	rm_file('test.log')
+	rm_file_dir('test.log')
 	cmd = "/var/www/smashbox/cgi-bin/smashbox/bin/smash --check-connection /var/www/smashbox/cgi-bin/smashbox/lib/test_basicSync.py >> test.log 2>&1"
 	process = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	process.communicate()
@@ -98,7 +112,7 @@ def get_conf_status():
 	with open("test.log", "r") as ins:
 		for line in ins:
 			print str(line) + "</br>"
-	rm_file('test.log')
+	rm_file_dir('test.log')
 
 def response(response_text):
 	print "Content-type:text/plain\r\n\r\n"
@@ -118,7 +132,7 @@ def get_history():
 	from os import listdir
 	from os.path import isfile, join
 	try:
-		test_path = '/var/www/smashbox/cgi-bin'
+		test_path = get_smash_conf_detail('smashdir')
 		onlyfiles = [ f for f in listdir(test_path) if isfile(join(test_path,f)) ]
 		test_array = []
 		for i in range(0, len(onlyfiles)):
@@ -127,7 +141,7 @@ def get_history():
 			if(len(test_correct) > 1):
 				test_correct = test_correct[1].split(".json")
 				test_runid = test_correct[0]
-				data = get_data_from_json(test)
+				data = get_data_from_json(test_path+"/"+test)
 				data["info"].insert(0,test_runid)
 				test_array.append(data)
  		json_response(test_array)
@@ -185,6 +199,35 @@ def stop_test_function(pid):
 	except Exception, e:
 		response(e)
 
+def manage_run_dir(status,smash_dir, data):
+	from os import listdir
+	try:
+		keep_log_failed = get_smash_conf_detail('keep_log_failed')
+		keep_test_rundir = get_smash_conf_detail('keep_test_rundir')
+		keep_logs = get_smash_conf_detail('keep_logs')
+		for key in data.keys():
+			if (key!="info"):
+				server_name = key
+		test_json = data[server_name]
+		test_runid = []
+		for test_key in test_json.keys():
+			test_instance_array = data[server_name][test_key]
+			for i in range(0, len(test_instance_array)):
+				test_instance = test_instance_array[i]
+				test_runid.append(test_instance["runid"])
+		
+		for f in listdir(smash_dir):
+			for j in range(0, len(test_runid)):
+				test_path_full = smash_dir+"/"+f
+				if ((keep_test_rundir=="False") and (f.find(test_runid[j]) != -1) and (f.find("test_results") == -1) and (f.find("log-") == -1)): 
+					rm_file_dir(test_path_full)
+				elif ((f.find(test_runid[j]) != -1) and (f.find("log-") != -1) and (keep_logs=="False")):
+					if not((keep_log_failed=="True") and status=="Failed"):
+						rm_file_dir(test_path_full)
+	except Exception, e:
+		##write_to_json_file("error: %s" % e,'control.json')
+		pass
+	
 def finish_test(tests_array = None):
 	import datetime
 	import os
@@ -194,15 +237,19 @@ def finish_test(tests_array = None):
 		if(tests_array == None):
 			tests_array = get_data_from_json('test_array.json')	
 		if (json.dumps(data)).find("error") != -1:
-			tests_array.insert(0,"Failed")
+			status="Failed"
 		else:
-			tests_array.insert(0,"Passed")
+			status="Passed"
+		tests_array.insert(0,status)
 		data = update_json_info(data, tests_array)
-		write_to_json_file(data,'test_results-'+datetime.datetime.now().strftime("%y%m%d-%H%M%S")+'.json')
-		rm_file(f_name)
+		smash_dir = get_smash_conf_detail('smashdir')
+		test_id = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
+		write_to_json_file(data,smash_dir+'/test_results-'+test_id+'.json')
+		rm_file_dir(f_name)
+		manage_run_dir(status,smash_dir, data)
 
 def get_test_details(test_name):
-	f_name = "test_results-" + test_name + ".json"
+	f_name = get_smash_conf_detail('smashdir')+"/test_results-" + test_name + ".json"
 	if(os.path.exists(f_name)):
 		data = get_data_from_json(f_name)
 		json_response(data)
@@ -271,7 +318,7 @@ def run(tests_array):
 		response("error: %s" % e)
 
 def delete_conf():
-	rm_file('smashbox/etc/smashbox.conf')	
+	rm_file_dir('smashbox/etc/smashbox.conf')	
 	response("ok")	
 		
 def set_conf(config_array):

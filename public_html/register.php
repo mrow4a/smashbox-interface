@@ -21,7 +21,7 @@
 				    	
 				    	if ($key=='oc_server_folder' || $key=='smashdir' || $key=='oc_sync_cmd'|| $key=='oc_server_tools_path'|| $key=='web_user'|| $key=='rundir_reset_procedure'){
 				    		echo '<input type="url" name="oc_config" id="'.$key.'" size="35" value="' . $val. '" style="font-size: 10px;" />';
-				    	}else if ($key=='oc_ssl_enabled' || $key=='workdir_runid_enabled' || $key=='oc_account_runid_enabled'){
+				    	}else if ($key=='oc_ssl_enabled' || $key=='workdir_runid_enabled' || $key=='oc_account_runid_enabled' || $key == 'keep_test_rundir' || $key == 'keep_log_failed' || $key == 'keep_logs'){
 				    		echo '<input type="checkbox" name="oc_config" id="'.$key.'" value="' . $val. '" onchange=check_checkbox(this.id) '.($val == 'True' ? "checked" : "").'/>';
 				    	}
 				    	else{
@@ -33,12 +33,15 @@
 				}
 			}
 			
-			$credentials_array = array(
+			$basic_array = array(
 					array('oc_account_name' => 'oc_account_name'),
 					array('oc_account_password' => 'oc_account_password'),
 					array('oc_server' => 'oc_server'),
 					array('oc_server_folder' => 'testfolder'),
-					array('smashdir' => '/var/www/smashbox/cgi-bin/tests')
+					array('smashdir' => '/var/www/smashbox/tests'),
+					array('keep_test_rundir' => 'False'),
+					array('keep_log_failed' => 'True'),
+					array('keep_logs' => 'False')
 			);
 			$server_array = array(
 					array('oc_ssl_enabled' => 'True'),
@@ -67,8 +70,8 @@
 					array('oc_sync_repeat' => 1),
 					array('runid' => 'None')
 			);
-			echo '<div class="section_header section_header_grey"><span style="display: inline;">Credentials configuration</span></div>';
-			create_config($credentials_array);
+			echo '<div class="section_header section_header_grey"><span style="display: inline;">Basic configuration</span></div>';
+			create_config($basic_array);
 			echo '</br><div class="section_header section_header_grey"><span style="display: inline;">Server configuration </span></div>';
 			create_config($server_array);
 			echo '</br><div class="section_header section_header_grey"><span style="display: inline;">Sharing configuration </span></div>';

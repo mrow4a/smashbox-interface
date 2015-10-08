@@ -244,14 +244,14 @@ function request_test_details(id){
 }
 
 function stop_test_in_progress_display(){
-	if(document.getElementById("test_id").innerHTML!=""){
+	if(document.getElementById("test_id") && document.getElementById("test_id").innerHTML!=""){
 		clearInterval(document.getElementById("test_id").innerHTML);
 	}
 	hide_test_section();
 }
 
 function get_test_details(){
-	//stop_test_in_progress_display();
+	stop_test_in_progress_display();
 	var test_history_radio = document.getElementsByName('test_history_radio');
 	var selected_id=null;
 	for(var i = 0; i < test_history_radio.length; i++){
@@ -299,7 +299,10 @@ function init_history_layout(array, arrayLength, start_from){
 		for(var key in test_info) {
 		    if(test_info.hasOwnProperty(key)) {
 		    	for (var j = 0; j < test_info[key].length; j++) {
-		    		cell3.innerHTML += "<span style=\"white-space: nowrap;\">"+key + " (testset="+test_info[key][j][0]+", loop="+test_info[key][j][1]+")</span></br>";
+		    		var loops = parseInt(test_info[key][j][1]);
+		    		for (var k = 1; k < (loops+1); k++) {
+		    			cell3.innerHTML += "<span style=\"white-space: nowrap;\">"+key + " (testset="+test_info[key][j][0]+", loop="+k+") </span></br>";
+		    		}
 		    	}
 		    }
 		}
@@ -362,8 +365,6 @@ function recent_test_finish_check(){
 		ajaxRequest.open("GET", "smashbox.php?function=finish_test", true);
 		ajaxRequest.send();
 	}
-	
-	
 }
 
 function result_details_fun() {
@@ -482,6 +483,7 @@ function display_test_details(obj){
 		    			else{
 		    				test_instance_result_cell.innerHTML += "</br><b style=\"color: green;\">Passed</b> ";
 		    			}
+		    			test_instance_result_cell.innerHTML += "</br><b>Log: </b><img src='lib/magnifier.png' alt='Show logfile' style='height: 10px;'>";
 		    			test_instance_result_cell.innerHTML += "</br>--------</br>";
 		    		}
 		    	}
