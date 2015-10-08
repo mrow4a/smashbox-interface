@@ -244,12 +244,14 @@ function request_test_details(id){
 }
 
 function stop_test_in_progress_display(){
-	clearInterval(document.getElementById("test_id").innerHTML);
+	if(document.getElementById("test_id").innerHTML!=""){
+		clearInterval(document.getElementById("test_id").innerHTML);
+	}
 	hide_test_section();
 }
 
 function get_test_details(){
-	stop_test_in_progress_display();
+	//stop_test_in_progress_display();
 	var test_history_radio = document.getElementsByName('test_history_radio');
 	var selected_id=null;
 	for(var i = 0; i < test_history_radio.length; i++){
@@ -368,7 +370,7 @@ function result_details_fun() {
 	if(document.getElementById("result_details_div").style.display == 'none'){
 		if(smashbox_status.search("test already running")!= -1){
 			document.getElementById("result_log_details_div").innerHTML = "<b>Test run in progress.</b></br>- Click on test radiobutton will result in stopping the display of the progress, but not the run of the test."+
-			"</br>- To display the progress of the running test, refresh the page.";
+			"</br>- To display the progress of the running test, refresh the page or click Hide section.";
 		}
 		else{
 			document.getElementById("result_log_details_div").innerHTML = "";
